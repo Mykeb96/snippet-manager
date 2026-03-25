@@ -31,3 +31,7 @@ C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\Debug\net10.0\refint
 C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\Debug\net10.0\..pdb
 C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\Debug\net10.0\..genruntimeconfig.cache
 C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\Debug\net10.0\ref\..dll
+C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\Debug\net10.0\..sourcelink.json
+C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
