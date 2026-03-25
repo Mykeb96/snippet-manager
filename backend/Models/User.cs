@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace backend.Models;
 
 public class User
@@ -10,7 +12,10 @@ public class User
 
     public string PasswordHash { get; set; } = string.Empty;
 
+    // Avoid JSON reference cycles: Snippet -> User -> Snippets -> User -> ...
+    [JsonIgnore]
     public List<Snippet> Snippets { get; set; } = new();
 
+    [JsonIgnore]
     public List<Favorite> Favorites { get; set; } = new();
 }
