@@ -17,4 +17,6 @@ public class Snippet
     public User user { get; set; } = null!;
 
     public List<SnippetTag> SnippetTags { get; set; } = new();
+
+    public List<Favorite> Favorites { get; set; } = new();
 }

@@ -11,4 +11,6 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
 
     public List<Snippet> Snippets { get; set; } = new();
+
+    public List<Favorite> Favorites { get; set; } = new();
 }
