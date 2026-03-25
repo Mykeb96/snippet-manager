@@ -15,4 +15,6 @@ public class Snippet
     public int UserId { get; set; }
 
     public User user { get; set; } = null!;
+
+    public List<SnippetTag> SnippetTags { get; set; } = new();
 }
