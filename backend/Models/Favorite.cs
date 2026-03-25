@@ -1,3 +1,5 @@
+namespace backend.Models;
+
 public class Favorite
 {
     public int UserId { get; set; }

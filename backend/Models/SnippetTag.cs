@@ -1,3 +1,5 @@
+namespace backend.Models;
+
 public class SnippetTag
 {
     public int SnippetId { get; set; }
