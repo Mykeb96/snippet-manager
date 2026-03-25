@@ -13,4 +13,6 @@ public class Snippet
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public int UserId { get; set; }
+
+    public User user { get; set; } = null!;
 }
