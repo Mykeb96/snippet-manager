@@ -83,7 +83,7 @@ public class SnippetTagsController : ControllerBase
                 new TagsController.TagResponse(st.Tag.Id, st.Tag.Name)))
             .FirstAsync();
 
-        return StatusCode(201, response);
+        return CreatedAtAction(nameof(GetTagsForSnippet), new { snippetId }, response);
     }
 
     // DELETE: api/snippets/5/tags/3

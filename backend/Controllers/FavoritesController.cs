@@ -102,7 +102,7 @@ public class FavoritesController : ControllerBase
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstAsync();
 
-        return StatusCode(201, response);
+        return CreatedAtAction(nameof(GetFavoritesByUser), new { userId = request.UserId }, response);
     }
 
     // DELETE: api/favorites/user/1/snippet/5

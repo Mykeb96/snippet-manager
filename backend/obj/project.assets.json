@@ -2923,9 +2923,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Mykae\\OneDrive\\Desktop\\snippet-manager\\backend\\..csproj",
-      "projectName": ".",
-      "projectPath": "C:\\Users\\Mykae\\OneDrive\\Desktop\\snippet-manager\\backend\\..csproj",
+      "projectUniqueName": "C:\\Users\\Mykae\\OneDrive\\Desktop\\snippet-manager\\backend\\backend.csproj",
+      "projectName": "backend",
+      "projectPath": "C:\\Users\\Mykae\\OneDrive\\Desktop\\snippet-manager\\backend\\backend.csproj",
       "packagesPath": "C:\\Users\\Mykae\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Mykae\\OneDrive\\Desktop\\snippet-manager\\backend\\obj\\",
       "projectStyle": "PackageReference",

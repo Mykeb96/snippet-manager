@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+# Snippet manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Full-stack app for saving and organizing code snippets: a **ASP.NET Core** REST API with **SQLite** / **EF Core**, and a **React + TypeScript + Vite** frontend.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Part | Tech |
+|------|------|
+| API | .NET 10, EF Core, SQLite (`backend/app.db`), Swagger |
+| UI | React 19, TypeScript, Vite |
 
-## React Compiler
+## Prerequisites
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js](https://nodejs.org/) (LTS is fine)
 
-## Expanding the ESLint configuration
+## Run the API
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+From the repo root:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd backend
+dotnet restore
+dotnet ef database update
+dotnet run
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- API (default profile): **http://localhost:5090**
+- Swagger UI (Development): **http://localhost:5090/swagger**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The database file is `backend/app.db`. See [backend/Migrations/README.md](backend/Migrations/README.md) for how migrations work and what to do if the schema gets out of sync.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+If `dotnet ef` is not recognized, install the EF Core CLI once: `dotnet tool install --global dotnet-ef`.
+
+## Run the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
+
+Vite serves the UI at **http://localhost:5173**. CORS is configured on the API for that origin.
+
+## API overview
+
+REST routes live under `/api`, for example:
+
+- `Users` — list / get / create users
+- `Snippets` — CRUD snippets (DTOs; snippets are tied to a user)
+- `Favorites` — favorites by user; composite key `(userId, snippetId)` on delete
+- `Tags` — tag catalog
+- `Snippets/{id}/tags` — tags attached to a snippet (nested resource)
+
+Use Swagger while developing to try requests and see schemas.
+
+## Dev notes
+
+- **Authentication** is not implemented. User creation accepts a `PasswordHash` field for local experimentation only; a production app would hash passwords server-side, add login, and protect endpoints.
+- **SQLite** is fine for development; deploy would typically switch to a managed database and configuration via environment variables or user secrets.

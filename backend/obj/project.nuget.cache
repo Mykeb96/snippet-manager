@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ul/nd8PccY0=",
+  "dgSpecHash": "rLqkfKWalxc=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Mykae\\OneDrive\\Desktop\\snippet-manager\\backend\\..csproj",
+  "projectFilePath": "C:\\Users\\Mykae\\OneDrive\\Desktop\\snippet-manager\\backend\\backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Mykae\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Mykae\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.5\\microsoft.aspnetcore.openapi.10.0.5.nupkg.sha512",
