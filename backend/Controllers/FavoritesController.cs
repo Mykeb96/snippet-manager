@@ -26,6 +26,7 @@ public class FavoritesController : ControllerBase
         SnippetsController.UserSummaryResponse User,
         SnippetSummaryResponse Snippet);
 
+    // GET: api/favorites
     [HttpGet]
     public async Task<ActionResult<IEnumerable<FavoriteResponse>>> GetFavorites()
     {
@@ -40,6 +41,7 @@ public class FavoritesController : ControllerBase
         return list;
     }
 
+    // GET: api/favorites/user/5
     [HttpGet("user/{userId:int}")]
     public async Task<ActionResult<IEnumerable<FavoriteResponse>>> GetFavoritesByUser(int userId)
     {
@@ -55,24 +57,32 @@ public class FavoritesController : ControllerBase
         return list;
     }
 
+    // POST: api/favorites
     [HttpPost]
     public async Task<ActionResult<FavoriteResponse>> CreateFavorite(CreateFavoriteRequest request)
     {
         if (request.UserId <= 0 || request.SnippetId <= 0)
+        {
             return BadRequest("UserId and SnippetId must be positive.");
+        }
 
-        var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
-        if (!userExists)
+        var user = await _context.Users.FindAsync(request.UserId);
+        if (user is null)
+        {
             return NotFound($"User with id={request.UserId} was not found.");
+        }
 
-        var snippetExists = await _context.Snippets.AnyAsync(s => s.Id == request.SnippetId);
-        if (!snippetExists)
+        var snippet = await _context.Snippets.FindAsync(request.SnippetId);
+        if (snippet is null)
+        {
             return NotFound($"Snippet with id={request.SnippetId} was not found.");
+        }
 
-        var already = await _context.Favorites.AnyAsync(f =>
-            f.UserId == request.UserId && f.SnippetId == request.SnippetId);
-        if (already)
+        var duplicateFavorite = await _context.Favorites.FindAsync(request.UserId, request.SnippetId);
+        if (duplicateFavorite is not null)
+        {
             return Conflict("This snippet is already in the user's favorites.");
+        }
 
         var favorite = new Favorite
         {
@@ -95,6 +105,7 @@ public class FavoritesController : ControllerBase
         return StatusCode(201, response);
     }
 
+    // DELETE: api/favorites/user/1/snippet/5
     [HttpDelete("user/{userId:int}/snippet/{snippetId:int}")]
     public async Task<IActionResult> DeleteFavorite(int userId, int snippetId)
     {

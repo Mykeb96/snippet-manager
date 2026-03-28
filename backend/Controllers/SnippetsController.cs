@@ -83,8 +83,8 @@ public class SnippetsController : ControllerBase
             return BadRequest("Title, Code, and Language are required.");
         }
 
-        var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
-        if (!userExists)
+        var user = await _context.Users.FindAsync(request.UserId);
+        if (user is null)
         {
             return NotFound($"User with id={request.UserId} was not found.");
         }

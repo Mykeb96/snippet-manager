@@ -40,7 +40,9 @@ public class UsersController : ControllerBase
             .FirstOrDefaultAsync();
 
         if (user is null)
+        {
             return NotFound();
+        }
 
         return user;
     }
@@ -59,12 +61,13 @@ public class UsersController : ControllerBase
         var normalizedEmail = request.Email.Trim();
         var normalizedUsername = request.Username.Trim();
 
-        var existing = await _context.Users
-            .Where(u => u.Email == normalizedEmail || u.Username == normalizedUsername)
-            .AnyAsync();
+        var duplicateUser = await _context.Users.FirstOrDefaultAsync(u =>
+            u.Email == normalizedEmail || u.Username == normalizedUsername);
 
-        if (existing)
+        if (duplicateUser is not null)
+        {
             return Conflict("A user with the same username or email already exists.");
+        }
 
         var user = new User
         {
