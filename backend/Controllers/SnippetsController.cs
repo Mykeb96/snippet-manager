@@ -64,7 +64,7 @@ public class SnippetsController : ControllerBase
             ))
             .FirstOrDefaultAsync();
 
-        if (snippet == null)
+        if (snippet is null)
         {
             return NotFound();
         }
@@ -123,7 +123,7 @@ public class SnippetsController : ControllerBase
     {
         var snippet = await _context.Snippets.FindAsync(id);
 
-        if (snippet == null)
+        if (snippet is null)
         {
             return NotFound();
         }
