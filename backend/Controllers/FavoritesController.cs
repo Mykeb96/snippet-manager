@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using backend.Data;
 using backend.Models;
 
@@ -70,6 +71,17 @@ public class FavoritesController : ControllerBase
             return BadRequest("UserId and SnippetId must be positive.");
         }
 
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (request.UserId != currentUserId.Value)
+        {
+            return Forbid();
+        }
+
         var user = await _context.Users.FindAsync(request.UserId);
         if (user is null)
         {
@@ -120,6 +132,17 @@ public class FavoritesController : ControllerBase
             return BadRequest("UserId and SnippetId must be positive.");
         }
 
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (userId != currentUserId.Value)
+        {
+            return Forbid();
+        }
+
         // Composite key order matches AppDbContext: (UserId, SnippetId)
         var favorite = await _context.Favorites.FindAsync(userId, snippetId);
 
@@ -132,5 +155,11 @@ public class FavoritesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out var userId) ? userId : null;
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using backend.Data;
 using backend.Models;
 
@@ -87,6 +88,17 @@ public class SnippetsController : ControllerBase
             return BadRequest("Title, Code, and Language are required.");
         }
 
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (request.UserId != currentUserId.Value)
+        {
+            return Forbid();
+        }
+
         var user = await _context.Users.FindAsync(request.UserId);
         if (user is null)
         {
@@ -127,6 +139,12 @@ public class SnippetsController : ControllerBase
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteSnippet(int id)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
         var snippet = await _context.Snippets.FindAsync(id);
 
         if (snippet is null)
@@ -134,9 +152,20 @@ public class SnippetsController : ControllerBase
             return NotFound();
         }
 
+        if (snippet.UserId != currentUserId.Value)
+        {
+            return Forbid();
+        }
+
         _context.Snippets.Remove(snippet);
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out var userId) ? userId : null;
     }
 }

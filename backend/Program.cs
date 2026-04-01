@@ -8,8 +8,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
 using backend.Models;
+using backend.Security;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var jwtSettings = BuildJwtSettings(builder.Configuration, builder.Environment);
 
 // Services
 builder.Services.AddControllers();
@@ -44,8 +47,8 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddSignInManager();
 
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "dev-only-super-secret-key-change-me";
-var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+builder.Services.AddSingleton(jwtSettings);
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -60,8 +63,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateIssuerSigningKey = true,
         ValidateLifetime = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "snippet-manager-api",
-        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "snippet-manager-client",
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = signingKey,
         ClockSkew = TimeSpan.FromMinutes(1)
     };
@@ -137,6 +140,40 @@ builder.Services.AddRateLimiter(options =>
 static string GetClientKey(HttpContext context)
 {
     return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+}
+
+static JwtSettings BuildJwtSettings(IConfiguration configuration, IWebHostEnvironment environment)
+{
+    const string devFallbackKey = "dev-only-super-secret-key-change-me";
+
+    var issuer = configuration["Jwt:Issuer"] ?? "snippet-manager-api";
+    var audience = configuration["Jwt:Audience"] ?? "snippet-manager-client";
+    var key = configuration["Jwt:Key"];
+
+    if (string.IsNullOrWhiteSpace(key))
+    {
+        if (environment.IsDevelopment())
+        {
+            Console.WriteLine("WARNING: Jwt:Key is not configured. Using development fallback key.");
+            key = devFallbackKey;
+        }
+        else
+        {
+            throw new InvalidOperationException("Jwt:Key must be configured outside Development.");
+        }
+    }
+
+    if (!environment.IsDevelopment() && key.Length < 32)
+    {
+        throw new InvalidOperationException("Jwt:Key is too short. Use at least 32 characters.");
+    }
+
+    return new JwtSettings
+    {
+        Issuer = issuer,
+        Audience = audience,
+        Key = key
+    };
 }
 
 var app = builder.Build();

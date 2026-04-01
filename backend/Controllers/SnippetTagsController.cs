@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using backend.Data;
 using backend.Models;
 
@@ -52,10 +53,21 @@ public class SnippetTagsController : ControllerBase
             return BadRequest("TagId must be positive.");
         }
 
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
         var snippet = await _context.Snippets.FindAsync(snippetId);
         if (snippet is null)
         {
             return NotFound($"Snippet with id={snippetId} was not found.");
+        }
+
+        if (snippet.UserId != currentUserId.Value)
+        {
+            return Forbid();
         }
 
         var tag = await _context.Tags.FindAsync(request.TagId);
@@ -101,6 +113,23 @@ public class SnippetTagsController : ControllerBase
             return BadRequest("TagId must be positive.");
         }
 
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        var snippet = await _context.Snippets.FindAsync(snippetId);
+        if (snippet is null)
+        {
+            return NotFound($"Snippet with id={snippetId} was not found.");
+        }
+
+        if (snippet.UserId != currentUserId.Value)
+        {
+            return Forbid();
+        }
+
         var link = await _context.SnippetTags.FindAsync(snippetId, tagId);
 
         if (link is null)
@@ -112,5 +141,11 @@ public class SnippetTagsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out var userId) ? userId : null;
     }
 }

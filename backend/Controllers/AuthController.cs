@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using backend.Models;
+using backend.Security;
 
 namespace backend.Controllers;
 
@@ -15,12 +16,12 @@ namespace backend.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly UserManager<User> _userManager;
-    private readonly IConfiguration _configuration;
+    private readonly JwtSettings _jwtSettings;
 
-    public AuthController(UserManager<User> userManager, IConfiguration configuration)
+    public AuthController(UserManager<User> userManager, JwtSettings jwtSettings)
     {
         _userManager = userManager;
-        _configuration = configuration;
+        _jwtSettings = jwtSettings;
     }
 
     public record RegisterRequest(string Username, string Email, string Password);
@@ -101,9 +102,6 @@ public class AuthController : ControllerBase
 
     private AuthResponse BuildAuthResponse(User user)
     {
-        var issuer = _configuration["Jwt:Issuer"] ?? "snippet-manager-api";
-        var audience = _configuration["Jwt:Audience"] ?? "snippet-manager-client";
-        var key = _configuration["Jwt:Key"] ?? "dev-only-super-secret-key-change-me";
         var expires = DateTime.UtcNow.AddMinutes(30);
 
         var claims = new List<Claim>
@@ -116,12 +114,12 @@ public class AuthController : ControllerBase
         };
 
         var credentials = new SigningCredentials(
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key)),
             SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
             claims: claims,
             expires: expires,
             signingCredentials: credentials);
