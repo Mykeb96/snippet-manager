@@ -13,7 +13,6 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     }
 
     public DbSet<Snippet> Snippets => Set<Snippet>();
-    public DbSet<User> Users => Set<User>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<SnippetTag> SnippetTags => Set<SnippetTag>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
