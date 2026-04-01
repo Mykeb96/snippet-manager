@@ -24,8 +24,13 @@ public class SnippetTagsController : ApiControllerBase
 
     // GET: api/snippets/5/tags
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TagsController.TagResponse>>> GetTagsForSnippet(int snippetId)
+    public async Task<ActionResult<IEnumerable<TagsController.TagResponse>>> GetTagsForSnippet(int snippetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        {
+            return pagingError;
+        }
+
         var snippet = await _context.Snippets.FindAsync(snippetId);
         if (snippet is null)
         {
@@ -35,6 +40,8 @@ public class SnippetTagsController : ApiControllerBase
         var tags = await _context.SnippetTags
             .Where(st => st.SnippetId == snippetId)
             .OrderBy(st => st.Tag.Name)
+            .Skip(skip)
+            .Take(take)
             .Select(st => new TagsController.TagResponse(st.Tag.Id, st.Tag.Name))
             .ToListAsync();
 
@@ -52,7 +59,7 @@ public class SnippetTagsController : ApiControllerBase
             return BadRequest("TagId must be positive.");
         }
 
-        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
+        if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
         }
@@ -111,7 +118,7 @@ public class SnippetTagsController : ApiControllerBase
             return BadRequest("TagId must be positive.");
         }
 
-        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
+        if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
         }

@@ -38,5 +38,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 
         modelBuilder.Entity<Favorite>()
             .HasKey(f => new { f.UserId, f.SnippetId });
+
+        modelBuilder.Entity<Tag>()
+            .HasIndex(t => t.Name)
+            .IsUnique();
     }
 }

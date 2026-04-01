@@ -32,9 +32,17 @@ public class SnippetsController : ApiControllerBase
 
     // GET: api/snippets
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippets()
+    public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippets([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        {
+            return pagingError;
+        }
+
         return await _context.Snippets
+            .OrderByDescending(s => s.CreatedAt)
+            .Skip(skip)
+            .Take(take)
             .Select(s => new SnippetResponse(
                 s.Id,
                 s.Title,
@@ -42,7 +50,7 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.user.Id, s.user.UserName ?? string.Empty, s.user.Email ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty, s.User.Email ?? string.Empty)
             ))
             .ToListAsync();
     }
@@ -60,7 +68,7 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.user.Id, s.user.UserName ?? string.Empty, s.user.Email ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty, s.User.Email ?? string.Empty)
             ))
             .FirstOrDefaultAsync();
 
@@ -85,7 +93,7 @@ public class SnippetsController : ApiControllerBase
             return BadRequest("Title, Code, and Language are required.");
         }
 
-        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
+        if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
         }
@@ -110,7 +118,7 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.user.Id, s.user.UserName ?? string.Empty, s.user.Email ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty, s.User.Email ?? string.Empty)
             ))
             .FirstAsync();
 
@@ -123,7 +131,7 @@ public class SnippetsController : ApiControllerBase
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteSnippet(int id)
     {
-        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
+        if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
         }

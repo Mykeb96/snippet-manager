@@ -9,7 +9,7 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TagsController : ControllerBase
+public class TagsController : ApiControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -23,10 +23,17 @@ public class TagsController : ControllerBase
 
     // GET: api/tags
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TagResponse>>> GetTags()
+    public async Task<ActionResult<IEnumerable<TagResponse>>> GetTags([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        {
+            return pagingError;
+        }
+
         var tags = await _context.Tags
             .OrderBy(t => t.Name)
+            .Skip(skip)
+            .Take(take)
             .Select(t => new TagResponse(t.Id, t.Name))
             .ToListAsync();
 

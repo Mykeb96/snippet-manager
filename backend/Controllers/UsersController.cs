@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 
@@ -6,7 +7,8 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController : ControllerBase
+[Authorize(Roles = "Admin")]
+public class UsersController : ApiControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -18,9 +20,17 @@ public class UsersController : ControllerBase
 
     // GET: api/users
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        {
+            return pagingError;
+        }
+
         var users = await _context.Users
+            .OrderBy(u => u.UserName)
+            .Skip(skip)
+            .Take(take)
             .Select(u => new UserResponse(u.Id, u.UserName ?? string.Empty, u.Email ?? string.Empty))
             .ToListAsync();
 

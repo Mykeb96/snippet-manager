@@ -30,9 +30,17 @@ public class FavoritesController : ApiControllerBase
 
     // GET: api/favorites
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<FavoriteResponse>>> GetFavorites()
+    public async Task<ActionResult<IEnumerable<FavoriteResponse>>> GetFavorites([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        {
+            return pagingError;
+        }
+
         var list = await _context.Favorites
+            .OrderByDescending(f => f.Snippet.CreatedAt)
+            .Skip(skip)
+            .Take(take)
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
@@ -45,10 +53,18 @@ public class FavoritesController : ApiControllerBase
 
     // GET: api/favorites/user/5
     [HttpGet("user/{userId:int}")]
-    public async Task<ActionResult<IEnumerable<FavoriteResponse>>> GetFavoritesByUser(int userId)
+    public async Task<ActionResult<IEnumerable<FavoriteResponse>>> GetFavoritesByUser(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        {
+            return pagingError;
+        }
+
         var list = await _context.Favorites
             .Where(f => f.UserId == userId)
+            .OrderByDescending(f => f.Snippet.CreatedAt)
+            .Skip(skip)
+            .Take(take)
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
@@ -57,6 +73,27 @@ public class FavoritesController : ApiControllerBase
             .ToListAsync();
 
         return list;
+    }
+
+    // GET: api/favorites/user/1/snippet/5
+    [HttpGet("user/{userId:int}/snippet/{snippetId:int}")]
+    public async Task<ActionResult<FavoriteResponse>> GetFavorite(int userId, int snippetId)
+    {
+        var favorite = await _context.Favorites
+            .Where(f => f.UserId == userId && f.SnippetId == snippetId)
+            .Select(f => new FavoriteResponse(
+                f.UserId,
+                f.SnippetId,
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
+                new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
+            .FirstOrDefaultAsync();
+
+        if (favorite is null)
+        {
+            return NotFound();
+        }
+
+        return favorite;
     }
 
     // POST: api/favorites
@@ -70,7 +107,7 @@ public class FavoritesController : ApiControllerBase
             return BadRequest("SnippetId must be positive.");
         }
 
-        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
+        if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
         }
@@ -105,7 +142,10 @@ public class FavoritesController : ApiControllerBase
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstAsync();
 
-        return CreatedAtAction(nameof(GetFavoritesByUser), new { userId = currentUserId }, response);
+        return CreatedAtAction(
+            nameof(GetFavorite),
+            new { userId = currentUserId, snippetId = request.SnippetId },
+            response);
     }
 
     // DELETE: api/favorites/user/1/snippet/5
@@ -119,7 +159,7 @@ public class FavoritesController : ApiControllerBase
             return BadRequest("UserId and SnippetId must be positive.");
         }
 
-        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
+        if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
         }

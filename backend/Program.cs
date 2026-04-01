@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
+using System.Security.Claims;
 using backend.Models;
 using backend.Security;
 
@@ -17,8 +18,9 @@ var jwtSettings = BuildJwtSettings(builder.Configuration, builder.Environment);
 // Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=app.db";
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=app.db"));
+    options.UseSqlite(connectionString));
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -139,7 +141,23 @@ builder.Services.AddRateLimiter(options =>
 
 static string GetClientKey(HttpContext context)
 {
-    return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (!string.IsNullOrWhiteSpace(userId))
+    {
+        return $"user:{userId}";
+    }
+
+    var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(forwardedFor))
+    {
+        var firstForwardedIp = forwardedFor.Split(',')[0].Trim();
+        if (!string.IsNullOrWhiteSpace(firstForwardedIp))
+        {
+            return $"ip:{firstForwardedIp}";
+        }
+    }
+
+    return $"ip:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
 }
 
 static JwtSettings BuildJwtSettings(IConfiguration configuration, IWebHostEnvironment environment)
