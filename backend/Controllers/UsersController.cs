@@ -50,42 +50,5 @@ public class UsersController : ControllerBase
 
         return user;
     }
-
-    // POST: api/users
-    [HttpPost]
-    [EnableRateLimiting("RegisterPolicy")]
-    public async Task<ActionResult<UserResponse>> CreateUser(CreateUserRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.Username) ||
-            string.IsNullOrWhiteSpace(request.Email) ||
-            string.IsNullOrWhiteSpace(request.Password))
-        {
-            return BadRequest("Username, Email, and Password are required.");
-        }
-
-        var normalizedEmail = request.Email.Trim();
-        var normalizedUsername = request.Username.Trim();
-        var duplicateUser = await _context.Users.FirstOrDefaultAsync(u =>
-            u.Email == normalizedEmail || u.UserName == normalizedUsername);
-        if (duplicateUser is not null)
-        {
-            return Conflict("A user with the same username or email already exists.");
-        }
-
-        var user = new User
-        {
-            UserName = normalizedUsername,
-            Email = normalizedEmail
-        };
-
-        var result = await _userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-        {
-            return BadRequest(result.Errors.Select(e => e.Description));
-        }
-
-        var response = new UserResponse(user.Id, user.UserName ?? string.Empty, user.Email ?? string.Empty);
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
-    }
 }
 
