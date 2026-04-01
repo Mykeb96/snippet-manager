@@ -96,7 +96,14 @@ public class SnippetTagsController : ApiControllerBase
         };
 
         _context.SnippetTags.Add(link);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return Conflict("This tag is already assigned to the snippet.");
+        }
 
         var response = await _context.SnippetTags
             .AsNoTracking()

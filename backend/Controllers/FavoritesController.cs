@@ -135,7 +135,14 @@ public class FavoritesController : ApiControllerBase
         };
 
         _context.Favorites.Add(favorite);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return Conflict("This snippet is already in the user's favorites.");
+        }
 
         var response = await _context.Favorites
             .AsNoTracking()

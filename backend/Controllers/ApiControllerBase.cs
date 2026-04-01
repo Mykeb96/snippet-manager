@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controllers;
@@ -50,6 +51,13 @@ public abstract class ApiControllerBase : ControllerBase
         skip = (page - 1) * pageSize;
         take = pageSize;
         return null;
+    }
+
+    protected static bool IsUniqueConstraintViolation(DbUpdateException exception)
+    {
+        var message = exception.InnerException?.Message ?? exception.Message;
+        return message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) ||
+               message.Contains("PRIMARY KEY constraint failed", StringComparison.OrdinalIgnoreCase);
     }
 }
 

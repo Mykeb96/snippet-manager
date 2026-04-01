@@ -15,8 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 var jwtSettings = BuildJwtSettings(builder.Configuration, builder.Environment);
 var connectionString = BuildConnectionString(builder.Configuration, builder.Environment);
+var corsAllowedOrigins = BuildCorsAllowedOrigins(builder.Configuration, builder.Environment);
 
-// Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -79,7 +79,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins(corsAllowedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
@@ -204,6 +204,17 @@ static string BuildConnectionString(IConfiguration configuration, IWebHostEnviro
     }
 
     return configuredConnection;
+}
+
+static string[] BuildCorsAllowedOrigins(IConfiguration configuration, IWebHostEnvironment _)
+{
+    var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+    if (origins is { Length: > 0 })
+    {
+        return origins;
+    }
+
+    throw new InvalidOperationException("Cors:AllowedOrigins must be configured for all environments.");
 }
 
 var app = builder.Build();

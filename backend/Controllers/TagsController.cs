@@ -80,7 +80,14 @@ public class TagsController : ApiControllerBase
         var tag = new Tag { Name = normalizedName };
 
         _context.Tags.Add(tag);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return Conflict("A tag with the same name already exists.");
+        }
 
         var response = new TagResponse(tag.Id, tag.Name);
         return CreatedAtAction(nameof(GetTag), new { id = tag.Id }, response);

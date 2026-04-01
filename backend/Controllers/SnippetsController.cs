@@ -58,7 +58,7 @@ public class SnippetsController : ApiControllerBase
     }
 
     // GET: api/snippets/5
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<SnippetResponse>> GetSnippet(int id)
     {
         var snippet = await _context.Snippets
@@ -130,7 +130,7 @@ public class SnippetsController : ApiControllerBase
     }
 
     // DELETE: api/snippets/5
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     [Authorize]
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteSnippet(int id)
