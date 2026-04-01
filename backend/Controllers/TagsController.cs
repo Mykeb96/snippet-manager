@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
+using backend.Contracts;
 using backend.Models;
 
 namespace backend.Controllers;
@@ -19,8 +20,6 @@ public class TagsController : ApiControllerBase
     }
 
     public record CreateTagRequest(string Name);
-    public record TagResponse(int Id, string Name);
-
     // GET: api/tags
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TagResponse>>> GetTags([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
@@ -31,6 +30,7 @@ public class TagsController : ApiControllerBase
         }
 
         var tags = await _context.Tags
+            .AsNoTracking()
             .OrderBy(t => t.Name)
             .Skip(skip)
             .Take(take)
@@ -45,6 +45,7 @@ public class TagsController : ApiControllerBase
     public async Task<ActionResult<TagResponse>> GetTag(int id)
     {
         var tag = await _context.Tags
+            .AsNoTracking()
             .Where(t => t.Id == id)
             .Select(t => new TagResponse(t.Id, t.Name))
             .FirstOrDefaultAsync();
@@ -70,7 +71,7 @@ public class TagsController : ApiControllerBase
 
         var normalizedName = request.Name.Trim().ToLowerInvariant();
 
-        var duplicateTag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == normalizedName);
+        var duplicateTag = await _context.Tags.AsNoTracking().FirstOrDefaultAsync(t => t.Name == normalizedName);
         if (duplicateTag is not null)
         {
             return Conflict("A tag with the same name already exists.");

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
+using backend.Contracts;
 using backend.Models;
 
 namespace backend.Controllers;
@@ -25,7 +26,7 @@ public class FavoritesController : ApiControllerBase
     public record FavoriteResponse(
         int UserId,
         int SnippetId,
-        SnippetsController.UserSummaryResponse User,
+        UserSummaryResponse User,
         SnippetSummaryResponse Snippet);
 
     // GET: api/favorites
@@ -38,13 +39,14 @@ public class FavoritesController : ApiControllerBase
         }
 
         var list = await _context.Favorites
+            .AsNoTracking()
             .OrderByDescending(f => f.Snippet.CreatedAt)
             .Skip(skip)
             .Take(take)
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
+                new UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .ToListAsync();
 
@@ -61,6 +63,7 @@ public class FavoritesController : ApiControllerBase
         }
 
         var list = await _context.Favorites
+            .AsNoTracking()
             .Where(f => f.UserId == userId)
             .OrderByDescending(f => f.Snippet.CreatedAt)
             .Skip(skip)
@@ -68,7 +71,7 @@ public class FavoritesController : ApiControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
+                new UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .ToListAsync();
 
@@ -80,11 +83,12 @@ public class FavoritesController : ApiControllerBase
     public async Task<ActionResult<FavoriteResponse>> GetFavorite(int userId, int snippetId)
     {
         var favorite = await _context.Favorites
+            .AsNoTracking()
             .Where(f => f.UserId == userId && f.SnippetId == snippetId)
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
+                new UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstOrDefaultAsync();
 
@@ -134,11 +138,12 @@ public class FavoritesController : ApiControllerBase
         await _context.SaveChangesAsync();
 
         var response = await _context.Favorites
+            .AsNoTracking()
             .Where(f => f.UserId == favorite.UserId && f.SnippetId == favorite.SnippetId)
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
+                new UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstAsync();
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
+using backend.Contracts;
 using backend.Models;
 
 namespace backend.Controllers;
@@ -19,7 +20,6 @@ public class SnippetsController : ApiControllerBase
     }
 
     public record CreateSnippetRequest(string Title, string Code, string Language);
-    public record UserSummaryResponse(int Id, string Username);
     public record SnippetResponse(
         int Id,
         string Title,
@@ -40,6 +40,7 @@ public class SnippetsController : ApiControllerBase
         }
 
         return await _context.Snippets
+            .AsNoTracking()
             .OrderByDescending(s => s.CreatedAt)
             .Skip(skip)
             .Take(take)
@@ -61,6 +62,7 @@ public class SnippetsController : ApiControllerBase
     public async Task<ActionResult<SnippetResponse>> GetSnippet(int id)
     {
         var snippet = await _context.Snippets
+            .AsNoTracking()
             .Where(s => s.Id == id)
             .Select(s => new SnippetResponse(
                 s.Id,
@@ -111,6 +113,7 @@ public class SnippetsController : ApiControllerBase
         await _context.SaveChangesAsync();
 
         var response = await _context.Snippets
+            .AsNoTracking()
             .Where(s => s.Id == snippet.Id)
             .Select(s => new SnippetResponse(
                 s.Id,

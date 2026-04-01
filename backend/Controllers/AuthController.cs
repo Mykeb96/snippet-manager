@@ -69,7 +69,7 @@ public class AuthController : ControllerBase
         }
 
         var response = await BuildAuthResponseAsync(user);
-        return Ok(response);
+        return StatusCode(StatusCodes.Status201Created, response);
     }
 
     // POST: api/auth/login

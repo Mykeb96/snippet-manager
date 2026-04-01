@@ -218,11 +218,17 @@ static async Task SeedDevelopmentAdminAsync(WebApplication app)
 
     var adminEmail = configuration["AdminSeed:Email"] ?? "admin@snippet.local";
     var adminUsername = configuration["AdminSeed:Username"] ?? "admin";
-    var adminPassword = configuration["AdminSeed:Password"] ?? "Admin1234";
+    var adminPassword = configuration["AdminSeed:Password"];
 
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser is null)
     {
+        if (string.IsNullOrWhiteSpace(adminPassword))
+        {
+            Console.WriteLine("WARNING: AdminSeed:Password is not configured. Skipping development admin user creation.");
+            return;
+        }
+
         adminUser = new User
         {
             UserName = adminUsername,

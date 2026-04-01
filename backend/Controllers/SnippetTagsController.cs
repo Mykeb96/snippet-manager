@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
+using backend.Contracts;
 using backend.Models;
 
 namespace backend.Controllers;
@@ -20,11 +21,11 @@ public class SnippetTagsController : ApiControllerBase
 
     public record AddSnippetTagRequest(int TagId);
 
-    public record SnippetTagResponse(int SnippetId, int TagId, TagsController.TagResponse Tag);
+    public record SnippetTagResponse(int SnippetId, int TagId, TagResponse Tag);
 
     // GET: api/snippets/5/tags
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TagsController.TagResponse>>> GetTagsForSnippet(int snippetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<IEnumerable<TagResponse>>> GetTagsForSnippet(int snippetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
         {
@@ -38,11 +39,12 @@ public class SnippetTagsController : ApiControllerBase
         }
 
         var tags = await _context.SnippetTags
+            .AsNoTracking()
             .Where(st => st.SnippetId == snippetId)
             .OrderBy(st => st.Tag.Name)
             .Skip(skip)
             .Take(take)
-            .Select(st => new TagsController.TagResponse(st.Tag.Id, st.Tag.Name))
+            .Select(st => new TagResponse(st.Tag.Id, st.Tag.Name))
             .ToListAsync();
 
         return tags;
@@ -97,11 +99,12 @@ public class SnippetTagsController : ApiControllerBase
         await _context.SaveChangesAsync();
 
         var response = await _context.SnippetTags
+            .AsNoTracking()
             .Where(st => st.SnippetId == snippetId && st.TagId == request.TagId)
             .Select(st => new SnippetTagResponse(
                 st.SnippetId,
                 st.TagId,
-                new TagsController.TagResponse(st.Tag.Id, st.Tag.Name)))
+                new TagResponse(st.Tag.Id, st.Tag.Name)))
             .FirstAsync();
 
         return CreatedAtAction(nameof(GetTagsForSnippet), new { snippetId }, response);

@@ -28,6 +28,7 @@ public class UsersController : ApiControllerBase
         }
 
         var users = await _context.Users
+            .AsNoTracking()
             .OrderBy(u => u.UserName)
             .Skip(skip)
             .Take(take)
@@ -42,6 +43,7 @@ public class UsersController : ApiControllerBase
     public async Task<ActionResult<UserResponse>> GetUser(int id)
     {
         var user = await _context.Users
+            .AsNoTracking()
             .Where(u => u.Id == id)
             .Select(u => new UserResponse(u.Id, u.UserName ?? string.Empty, u.Email ?? string.Empty))
             .FirstOrDefaultAsync();
