@@ -178,9 +178,9 @@ static JwtSettings BuildJwtSettings(IConfiguration configuration, IWebHostEnviro
 
 var app = builder.Build();
 
-// Middleware
 if (app.Environment.IsDevelopment())
 {
+    await SeedDevelopmentAdminAsync(app);
     app.UseSwagger();
     app.UseSwaggerUI();
 }
@@ -194,3 +194,44 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static async Task SeedDevelopmentAdminAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+    const string adminRole = "Admin";
+    if (!await roleManager.RoleExistsAsync(adminRole))
+    {
+        await roleManager.CreateAsync(new IdentityRole<int>(adminRole));
+    }
+
+    var adminEmail = configuration["AdminSeed:Email"] ?? "admin@snippet.local";
+    var adminUsername = configuration["AdminSeed:Username"] ?? "admin";
+    var adminPassword = configuration["AdminSeed:Password"] ?? "Admin1234";
+
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser is null)
+    {
+        adminUser = new User
+        {
+            UserName = adminUsername,
+            Email = adminEmail,
+            EmailConfirmed = true
+        };
+
+        var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+        if (!createResult.Succeeded)
+        {
+            var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to seed development admin user: {errors}");
+        }
+    }
+
+    if (!await userManager.IsInRoleAsync(adminUser, adminRole))
+    {
+        await userManager.AddToRoleAsync(adminUser, adminRole);
+    }
+}

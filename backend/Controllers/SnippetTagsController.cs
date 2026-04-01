@@ -52,10 +52,9 @@ public class SnippetTagsController : ApiControllerBase
             return BadRequest("TagId must be positive.");
         }
 
-        var currentUserId = GetCurrentUserId();
-        if (currentUserId is null)
+        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
         {
-            return Unauthorized();
+            return authError;
         }
 
         var snippet = await _context.Snippets.FindAsync(snippetId);
@@ -64,7 +63,7 @@ public class SnippetTagsController : ApiControllerBase
             return NotFound($"Snippet with id={snippetId} was not found.");
         }
 
-        if (snippet.UserId != currentUserId.Value)
+        if (snippet.UserId != currentUserId)
         {
             return Forbid();
         }
@@ -112,10 +111,9 @@ public class SnippetTagsController : ApiControllerBase
             return BadRequest("TagId must be positive.");
         }
 
-        var currentUserId = GetCurrentUserId();
-        if (currentUserId is null)
+        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
         {
-            return Unauthorized();
+            return authError;
         }
 
         var snippet = await _context.Snippets.FindAsync(snippetId);
@@ -124,7 +122,7 @@ public class SnippetTagsController : ApiControllerBase
             return NotFound($"Snippet with id={snippetId} was not found.");
         }
 
-        if (snippet.UserId != currentUserId.Value)
+        if (snippet.UserId != currentUserId)
         {
             return Forbid();
         }

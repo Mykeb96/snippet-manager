@@ -20,7 +20,7 @@ public class FavoritesController : ApiControllerBase
 
     public record SnippetSummaryResponse(int Id, string Title, string Code, string Language);
 
-    public record CreateFavoriteRequest(int UserId, int SnippetId);
+    public record CreateFavoriteRequest(int SnippetId);
 
     public record FavoriteResponse(
         int UserId,
@@ -65,26 +65,14 @@ public class FavoritesController : ApiControllerBase
     [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<FavoriteResponse>> CreateFavorite(CreateFavoriteRequest request)
     {
-        if (request.UserId <= 0 || request.SnippetId <= 0)
+        if (request.SnippetId <= 0)
         {
-            return BadRequest("UserId and SnippetId must be positive.");
+            return BadRequest("SnippetId must be positive.");
         }
 
-        var currentUserId = GetCurrentUserId();
-        if (currentUserId is null)
+        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
         {
-            return Unauthorized();
-        }
-
-        if (request.UserId != currentUserId.Value)
-        {
-            return Forbid();
-        }
-
-        var user = await _context.Users.FindAsync(request.UserId);
-        if (user is null)
-        {
-            return NotFound($"User with id={request.UserId} was not found.");
+            return authError;
         }
 
         var snippet = await _context.Snippets.FindAsync(request.SnippetId);
@@ -93,7 +81,7 @@ public class FavoritesController : ApiControllerBase
             return NotFound($"Snippet with id={request.SnippetId} was not found.");
         }
 
-        var duplicateFavorite = await _context.Favorites.FindAsync(request.UserId, request.SnippetId);
+        var duplicateFavorite = await _context.Favorites.FindAsync(currentUserId, request.SnippetId);
         if (duplicateFavorite is not null)
         {
             return Conflict("This snippet is already in the user's favorites.");
@@ -101,7 +89,7 @@ public class FavoritesController : ApiControllerBase
 
         var favorite = new Favorite
         {
-            UserId = request.UserId,
+            UserId = currentUserId,
             SnippetId = request.SnippetId
         };
 
@@ -117,7 +105,7 @@ public class FavoritesController : ApiControllerBase
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstAsync();
 
-        return CreatedAtAction(nameof(GetFavoritesByUser), new { userId = request.UserId }, response);
+        return CreatedAtAction(nameof(GetFavoritesByUser), new { userId = currentUserId }, response);
     }
 
     // DELETE: api/favorites/user/1/snippet/5
@@ -131,13 +119,12 @@ public class FavoritesController : ApiControllerBase
             return BadRequest("UserId and SnippetId must be positive.");
         }
 
-        var currentUserId = GetCurrentUserId();
-        if (currentUserId is null)
+        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
         {
-            return Unauthorized();
+            return authError;
         }
 
-        if (userId != currentUserId.Value)
+        if (userId != currentUserId)
         {
             return Forbid();
         }

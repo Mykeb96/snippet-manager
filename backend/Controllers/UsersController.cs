@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
-using backend.Models;
 
 namespace backend.Controllers;
 
@@ -12,15 +9,11 @@ namespace backend.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
-    private readonly UserManager<User> _userManager;
 
-    public UsersController(AppDbContext context, UserManager<User> userManager)
+    public UsersController(AppDbContext context)
     {
         _context = context;
-        _userManager = userManager;
     }
-
-    public record CreateUserRequest(string Username, string Email, string Password);
     public record UserResponse(int Id, string Username, string Email);
 
     // GET: api/users

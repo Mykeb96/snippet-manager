@@ -85,10 +85,9 @@ public class SnippetsController : ApiControllerBase
             return BadRequest("Title, Code, and Language are required.");
         }
 
-        var currentUserId = GetCurrentUserId();
-        if (currentUserId is null)
+        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
         {
-            return Unauthorized();
+            return authError;
         }
 
         var snippet = new Snippet
@@ -96,7 +95,7 @@ public class SnippetsController : ApiControllerBase
             Title = request.Title.Trim(),
             Code = request.Code,
             Language = request.Language.Trim(),
-            UserId = currentUserId.Value
+            UserId = currentUserId
         };
 
         _context.Snippets.Add(snippet);
@@ -124,10 +123,9 @@ public class SnippetsController : ApiControllerBase
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteSnippet(int id)
     {
-        var currentUserId = GetCurrentUserId();
-        if (currentUserId is null)
+        if (RequireCurrentUserId(out var currentUserId) is IActionResult authError)
         {
-            return Unauthorized();
+            return authError;
         }
 
         var snippet = await _context.Snippets.FindAsync(id);
@@ -137,7 +135,7 @@ public class SnippetsController : ApiControllerBase
             return NotFound();
         }
 
-        if (snippet.UserId != currentUserId.Value)
+        if (snippet.UserId != currentUserId)
         {
             return Forbid();
         }

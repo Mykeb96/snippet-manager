@@ -52,7 +52,7 @@ public class TagsController : ControllerBase
 
     // POST: api/tags
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<TagResponse>> CreateTag(CreateTagRequest request)
     {
@@ -80,7 +80,7 @@ public class TagsController : ControllerBase
 
     // DELETE: api/tags/5
     [HttpDelete("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteTag(int id)
     {
@@ -91,8 +91,8 @@ public class TagsController : ControllerBase
             return NotFound();
         }
 
-        // Tags are global/shared metadata. We allow any authenticated user to manage them,
-        // but block deletion while a tag is still referenced by snippets.
+        // Tags are global/shared metadata managed by admins.
+        // Deletion is blocked while a tag is still referenced by snippets.
         var inUse = await _context.SnippetTags.AnyAsync(st => st.TagId == id);
         if (inUse)
         {

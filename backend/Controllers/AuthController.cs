@@ -68,7 +68,7 @@ public class AuthController : ControllerBase
             return BadRequest(result.Errors.Select(e => e.Description));
         }
 
-        var response = BuildAuthResponse(user);
+        var response = await BuildAuthResponseAsync(user);
         return Ok(response);
     }
 
@@ -97,12 +97,13 @@ public class AuthController : ControllerBase
             return Unauthorized("Invalid credentials.");
         }
 
-        return Ok(BuildAuthResponse(user));
+        return Ok(await BuildAuthResponseAsync(user));
     }
 
-    private AuthResponse BuildAuthResponse(User user)
+    private async Task<AuthResponse> BuildAuthResponseAsync(User user)
     {
         var expires = DateTime.UtcNow.AddMinutes(30);
+        var roles = await _userManager.GetRolesAsync(user);
 
         var claims = new List<Claim>
         {
@@ -112,6 +113,7 @@ public class AuthController : ControllerBase
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.UserName ?? string.Empty)
         };
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key)),
