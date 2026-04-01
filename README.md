@@ -66,7 +66,7 @@ Production-style convention in this repo is:
 Common environment variable keys:
 
 - `Jwt__Key` (required in all environments; minimum 32 chars)
-- `ConnectionStrings__DefaultConnection` (required outside Development; production cannot use `Data Source=app.db`)
+- `ConnectionStrings__DefaultConnection` (required in all environments)
 - `AdminSeed__Password` (optional, Development only, used when first creating the dev admin)
 - `Cors__AllowedOrigins__0` (set one or more frontend origins outside Development)
 
@@ -78,5 +78,6 @@ Common environment variable keys:
 - **Tag management rule:** tags are shared/global metadata; deletion is blocked while a tag is in use by snippets.
 - **Development admin seed:** on startup in Development, the app ensures an admin role exists and creates the admin user only when `AdminSeed:Password` is provided (for example via `AdminSeed__Password`).
 - **JWT secret handling:** configure `Jwt:Key` via environment variables (or user secrets locally). There is no hardcoded fallback. Startup fails if missing, with a development-friendly setup message in Development.
-- **Database config:** Development can use local SQLite. Outside Development, `ConnectionStrings:DefaultConnection` must be explicitly configured and cannot be the development fallback `Data Source=app.db`.
+- **Database config:** `ConnectionStrings:DefaultConnection` must be explicitly configured in all environments.
 - **CORS config:** `Cors:AllowedOrigins` is required in all environments (no hardcoded fallback).
+- **Pagination metadata:** list endpoints include `X-Total-Count`, `X-Page`, and `X-Page-Size` headers.

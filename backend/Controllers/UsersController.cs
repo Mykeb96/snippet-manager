@@ -20,12 +20,15 @@ public class UsersController : ApiControllerBase
 
     // GET: api/users
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
         if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
         {
             return pagingError;
         }
+
+        var totalCount = await _context.Users.AsNoTracking().CountAsync(cancellationToken);
+        WritePaginationHeaders(totalCount, page, pageSize);
 
         var users = await _context.Users
             .AsNoTracking()
@@ -33,20 +36,20 @@ public class UsersController : ApiControllerBase
             .Skip(skip)
             .Take(take)
             .Select(u => new UserResponse(u.Id, u.UserName ?? string.Empty, u.Email ?? string.Empty))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return users;
     }
 
     // GET: api/users/5
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<UserResponse>> GetUser(int id)
+    public async Task<ActionResult<UserResponse>> GetUser(int id, CancellationToken cancellationToken = default)
     {
         var user = await _context.Users
             .AsNoTracking()
             .Where(u => u.Id == id)
             .Select(u => new UserResponse(u.Id, u.UserName ?? string.Empty, u.Email ?? string.Empty))
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (user is null)
         {

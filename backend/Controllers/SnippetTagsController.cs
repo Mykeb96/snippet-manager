@@ -25,18 +25,24 @@ public class SnippetTagsController : ApiControllerBase
 
     // GET: api/snippets/5/tags
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TagResponse>>> GetTagsForSnippet(int snippetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<IEnumerable<TagResponse>>> GetTagsForSnippet(int snippetId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
         if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
         {
             return pagingError;
         }
 
-        var snippet = await _context.Snippets.FindAsync(snippetId);
+        var snippet = await _context.Snippets.AsNoTracking().FirstOrDefaultAsync(s => s.Id == snippetId, cancellationToken);
         if (snippet is null)
         {
             return NotFound($"Snippet with id={snippetId} was not found.");
         }
+
+        var totalCount = await _context.SnippetTags
+            .AsNoTracking()
+            .Where(st => st.SnippetId == snippetId)
+            .CountAsync(cancellationToken);
+        WritePaginationHeaders(totalCount, page, pageSize);
 
         var tags = await _context.SnippetTags
             .AsNoTracking()
@@ -45,7 +51,7 @@ public class SnippetTagsController : ApiControllerBase
             .Skip(skip)
             .Take(take)
             .Select(st => new TagResponse(st.Tag.Id, st.Tag.Name))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return tags;
     }
@@ -54,7 +60,7 @@ public class SnippetTagsController : ApiControllerBase
     [HttpPost]
     [Authorize]
     [EnableRateLimiting("WritePolicy")]
-    public async Task<ActionResult<SnippetTagResponse>> AddTagToSnippet(int snippetId, AddSnippetTagRequest request)
+    public async Task<ActionResult<SnippetTagResponse>> AddTagToSnippet(int snippetId, AddSnippetTagRequest request, CancellationToken cancellationToken = default)
     {
         if (request.TagId <= 0)
         {
@@ -66,7 +72,7 @@ public class SnippetTagsController : ApiControllerBase
             return authError;
         }
 
-        var snippet = await _context.Snippets.FindAsync(snippetId);
+        var snippet = await _context.Snippets.FirstOrDefaultAsync(s => s.Id == snippetId, cancellationToken);
         if (snippet is null)
         {
             return NotFound($"Snippet with id={snippetId} was not found.");
@@ -77,13 +83,15 @@ public class SnippetTagsController : ApiControllerBase
             return Forbid();
         }
 
-        var tag = await _context.Tags.FindAsync(request.TagId);
+        var tag = await _context.Tags.AsNoTracking().FirstOrDefaultAsync(t => t.Id == request.TagId, cancellationToken);
         if (tag is null)
         {
             return NotFound($"Tag with id={request.TagId} was not found.");
         }
 
-        var duplicateLink = await _context.SnippetTags.FindAsync(snippetId, request.TagId);
+        var duplicateLink = await _context.SnippetTags
+            .AsNoTracking()
+            .FirstOrDefaultAsync(st => st.SnippetId == snippetId && st.TagId == request.TagId, cancellationToken);
         if (duplicateLink is not null)
         {
             return Conflict("This tag is already assigned to the snippet.");
@@ -98,7 +106,7 @@ public class SnippetTagsController : ApiControllerBase
         _context.SnippetTags.Add(link);
         try
         {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
@@ -112,7 +120,7 @@ public class SnippetTagsController : ApiControllerBase
                 st.SnippetId,
                 st.TagId,
                 new TagResponse(st.Tag.Id, st.Tag.Name)))
-            .FirstAsync();
+            .FirstAsync(cancellationToken);
 
         return CreatedAtAction(nameof(GetTagsForSnippet), new { snippetId }, response);
     }
@@ -121,7 +129,7 @@ public class SnippetTagsController : ApiControllerBase
     [HttpDelete("{tagId:int}")]
     [Authorize]
     [EnableRateLimiting("WritePolicy")]
-    public async Task<IActionResult> RemoveTagFromSnippet(int snippetId, int tagId)
+    public async Task<IActionResult> RemoveTagFromSnippet(int snippetId, int tagId, CancellationToken cancellationToken = default)
     {
         if (tagId <= 0)
         {
@@ -133,7 +141,7 @@ public class SnippetTagsController : ApiControllerBase
             return authError;
         }
 
-        var snippet = await _context.Snippets.FindAsync(snippetId);
+        var snippet = await _context.Snippets.FirstOrDefaultAsync(s => s.Id == snippetId, cancellationToken);
         if (snippet is null)
         {
             return NotFound($"Snippet with id={snippetId} was not found.");
@@ -144,7 +152,9 @@ public class SnippetTagsController : ApiControllerBase
             return Forbid();
         }
 
-        var link = await _context.SnippetTags.FindAsync(snippetId, tagId);
+        var link = await _context.SnippetTags.FirstOrDefaultAsync(
+            st => st.SnippetId == snippetId && st.TagId == tagId,
+            cancellationToken);
 
         if (link is null)
         {
@@ -152,7 +162,7 @@ public class SnippetTagsController : ApiControllerBase
         }
 
         _context.SnippetTags.Remove(link);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
     }

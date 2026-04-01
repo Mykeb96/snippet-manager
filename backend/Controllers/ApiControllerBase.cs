@@ -59,5 +59,12 @@ public abstract class ApiControllerBase : ControllerBase
         return message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) ||
                message.Contains("PRIMARY KEY constraint failed", StringComparison.OrdinalIgnoreCase);
     }
+
+    protected void WritePaginationHeaders(int totalCount, int page, int pageSize)
+    {
+        Response.Headers["X-Total-Count"] = totalCount.ToString();
+        Response.Headers["X-Page"] = page.ToString();
+        Response.Headers["X-Page-Size"] = pageSize.ToString();
+    }
 }
 

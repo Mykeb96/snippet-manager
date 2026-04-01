@@ -32,12 +32,15 @@ public class SnippetsController : ApiControllerBase
 
     // GET: api/snippets
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippets([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippets([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
         if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
         {
             return pagingError;
         }
+
+        var totalCount = await _context.Snippets.AsNoTracking().CountAsync(cancellationToken);
+        WritePaginationHeaders(totalCount, page, pageSize);
 
         return await _context.Snippets
             .AsNoTracking()
@@ -54,12 +57,12 @@ public class SnippetsController : ApiControllerBase
                 s.UserId,
                 new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
             ))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     // GET: api/snippets/5
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<SnippetResponse>> GetSnippet(int id)
+    public async Task<ActionResult<SnippetResponse>> GetSnippet(int id, CancellationToken cancellationToken = default)
     {
         var snippet = await _context.Snippets
             .AsNoTracking()
@@ -73,7 +76,7 @@ public class SnippetsController : ApiControllerBase
                 s.UserId,
                 new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
             ))
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (snippet is null)
         {
@@ -87,7 +90,7 @@ public class SnippetsController : ApiControllerBase
     [HttpPost]
     [Authorize]
     [EnableRateLimiting("WritePolicy")]
-    public async Task<ActionResult<SnippetResponse>> CreateSnippet(CreateSnippetRequest request)
+    public async Task<ActionResult<SnippetResponse>> CreateSnippet(CreateSnippetRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Title) ||
             string.IsNullOrWhiteSpace(request.Code) ||
@@ -110,7 +113,7 @@ public class SnippetsController : ApiControllerBase
         };
 
         _context.Snippets.Add(snippet);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         var response = await _context.Snippets
             .AsNoTracking()
@@ -124,7 +127,7 @@ public class SnippetsController : ApiControllerBase
                 s.UserId,
                 new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
             ))
-            .FirstAsync();
+            .FirstAsync(cancellationToken);
 
         return CreatedAtAction(nameof(GetSnippet), new { id = snippet.Id }, response);
     }
@@ -133,14 +136,14 @@ public class SnippetsController : ApiControllerBase
     [HttpDelete("{id:int}")]
     [Authorize]
     [EnableRateLimiting("WritePolicy")]
-    public async Task<IActionResult> DeleteSnippet(int id)
+    public async Task<IActionResult> DeleteSnippet(int id, CancellationToken cancellationToken = default)
     {
         if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
         }
 
-        var snippet = await _context.Snippets.FindAsync(id);
+        var snippet = await _context.Snippets.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 
         if (snippet is null)
         {
@@ -153,7 +156,7 @@ public class SnippetsController : ApiControllerBase
         }
 
         _context.Snippets.Remove(snippet);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
     }

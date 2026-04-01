@@ -181,26 +181,12 @@ static JwtSettings BuildJwtSettings(IConfiguration configuration, IWebHostEnviro
     };
 }
 
-static string BuildConnectionString(IConfiguration configuration, IWebHostEnvironment environment)
+static string BuildConnectionString(IConfiguration configuration, IWebHostEnvironment _)
 {
-    const string devFallbackConnection = "Data Source=app.db";
-
     var configuredConnection = configuration.GetConnectionString("DefaultConnection");
     if (string.IsNullOrWhiteSpace(configuredConnection))
     {
-        if (environment.IsDevelopment())
-        {
-            Console.WriteLine("WARNING: ConnectionStrings:DefaultConnection is not configured. Using development fallback SQLite database.");
-            return devFallbackConnection;
-        }
-
-        throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured outside Development.");
-    }
-
-    if (!environment.IsDevelopment() &&
-        string.Equals(configuredConnection, devFallbackConnection, StringComparison.OrdinalIgnoreCase))
-    {
-        throw new InvalidOperationException("Production configuration cannot use the development SQLite fallback connection string.");
+        throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured for all environments.");
     }
 
     return configuredConnection;
