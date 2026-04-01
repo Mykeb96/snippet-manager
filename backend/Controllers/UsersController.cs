@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
@@ -49,6 +50,7 @@ public class UsersController : ControllerBase
 
     // POST: api/users
     [HttpPost]
+    [EnableRateLimiting("RegisterPolicy")]
     public async Task<ActionResult<UserResponse>> CreateUser(CreateUserRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Username) ||

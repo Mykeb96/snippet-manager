@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
@@ -50,6 +51,7 @@ public class TagsController : ControllerBase
 
     // POST: api/tags
     [HttpPost]
+    [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<TagResponse>> CreateTag(CreateTagRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -76,6 +78,7 @@ public class TagsController : ControllerBase
 
     // DELETE: api/tags/5
     [HttpDelete("{id:int}")]
+    [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteTag(int id)
     {
         var tag = await _context.Tags.FindAsync(id);

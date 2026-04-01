@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
@@ -59,6 +60,7 @@ public class FavoritesController : ControllerBase
 
     // POST: api/favorites
     [HttpPost]
+    [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<FavoriteResponse>> CreateFavorite(CreateFavoriteRequest request)
     {
         if (request.UserId <= 0 || request.SnippetId <= 0)
@@ -107,6 +109,7 @@ public class FavoritesController : ControllerBase
 
     // DELETE: api/favorites/user/1/snippet/5
     [HttpDelete("user/{userId:int}/snippet/{snippetId:int}")]
+    [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteFavorite(int userId, int snippetId)
     {
         if (userId <= 0 || snippetId <= 0)

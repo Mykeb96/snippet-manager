@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
@@ -74,6 +75,7 @@ public class SnippetsController : ControllerBase
 
     // POST: api/snippets
     [HttpPost]
+    [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<SnippetResponse>> CreateSnippet(CreateSnippetRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title) ||
@@ -119,6 +121,7 @@ public class SnippetsController : ControllerBase
 
     // DELETE: api/snippets/5
     [HttpDelete("{id}")]
+    [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteSnippet(int id)
     {
         var snippet = await _context.Snippets.FindAsync(id);
