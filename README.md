@@ -46,15 +46,19 @@ Vite serves the UI at **http://localhost:5173**. CORS is configured on the API f
 
 REST routes live under `/api`, for example:
 
-- `Users` — list / get / create users
-- `Snippets` — CRUD snippets (DTOs; snippets are tied to a user)
+- `Auth` — register/login and JWT issuance
+- `Users` — list/get user summaries
+- `Snippets` — CRUD snippets (owner-based writes)
 - `Favorites` — favorites by user; composite key `(userId, snippetId)` on delete
-- `Tags` — tag catalog
+- `Tags` — global tag catalog
 - `Snippets/{id}/tags` — tags attached to a snippet (nested resource)
 
 Use Swagger while developing to try requests and see schemas.
 
 ## Dev notes
 
-- **Authentication** is not implemented. User creation accepts a `PasswordHash` field for local experimentation only; a production app would hash passwords server-side, add login, and protect endpoints.
+- **Auth model:** ASP.NET Core Identity + JWT bearer tokens.
+- **Write authorization:** write routes require authentication, and snippet/favorite/tag-link writes enforce ownership based on the JWT user id claim.
+- **Tag management rule:** tags are shared/global metadata; any authenticated user can create/delete tags, but deletion is blocked while a tag is in use by snippets.
+- **JWT secret handling:** configure `Jwt:Key` via environment variables or user secrets. In Development only, a fallback key is used if missing (warning logged). Outside Development, startup fails if no key is provided.
 - **SQLite** is fine for development; deploy would typically switch to a managed database and configuration via environment variables or user secrets.

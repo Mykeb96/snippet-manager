@@ -91,6 +91,14 @@ public class TagsController : ControllerBase
             return NotFound();
         }
 
+        // Tags are global/shared metadata. We allow any authenticated user to manage them,
+        // but block deletion while a tag is still referenced by snippets.
+        var inUse = await _context.SnippetTags.AnyAsync(st => st.TagId == id);
+        if (inUse)
+        {
+            return Conflict("Cannot delete a tag that is currently assigned to snippets.");
+        }
+
         _context.Tags.Remove(tag);
         await _context.SaveChangesAsync();
 

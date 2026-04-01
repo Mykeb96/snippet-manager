@@ -18,7 +18,7 @@ public class SnippetsController : ApiControllerBase
         _context = context;
     }
 
-    public record CreateSnippetRequest(string Title, string Code, string Language, int UserId);
+    public record CreateSnippetRequest(string Title, string Code, string Language);
     public record UserSummaryResponse(int Id, string Username, string Email);
     public record SnippetResponse(
         int Id,
@@ -34,8 +34,6 @@ public class SnippetsController : ApiControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippets()
     {
-        // Project to a DTO so we don't accidentally serialize the full EF navigation graph
-        // (and so we don't return sensitive fields like PasswordHash).
         return await _context.Snippets
             .Select(s => new SnippetResponse(
                 s.Id,
@@ -93,29 +91,17 @@ public class SnippetsController : ApiControllerBase
             return Unauthorized();
         }
 
-        if (request.UserId != currentUserId.Value)
-        {
-            return Forbid();
-        }
-
-        var user = await _context.Users.FindAsync(request.UserId);
-        if (user is null)
-        {
-            return NotFound($"User with id={request.UserId} was not found.");
-        }
-
         var snippet = new Snippet
         {
             Title = request.Title.Trim(),
             Code = request.Code,
             Language = request.Language.Trim(),
-            UserId = request.UserId
+            UserId = currentUserId.Value
         };
 
         _context.Snippets.Add(snippet);
         await _context.SaveChangesAsync();
 
-        // Re-load just enough data for the DTO response shape.
         var response = await _context.Snippets
             .Where(s => s.Id == snippet.Id)
             .Select(s => new SnippetResponse(
