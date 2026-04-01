@@ -68,7 +68,7 @@ Common environment variable keys:
 - `Jwt__Key` (required in all environments; minimum 32 chars)
 - `ConnectionStrings__DefaultConnection` (required in all environments)
 - `AdminSeed__Password` (optional, Development only, used when first creating the dev admin)
-- `Cors__AllowedOrigins__0` (set one or more frontend origins outside Development)
+- `Cors__AllowedOrigins__0` (set one or more frontend origins)
 
 ## Dev notes
 
