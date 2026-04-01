@@ -1,17 +1,10 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
 
 namespace backend.Models;
 
-public class User
+public class User : IdentityUser<int>
 {
-    public int Id { get; set; }
-
-    public string Username { get; set; } = string.Empty;
-
-    public string Email { get; set; } = string.Empty;
-
-    public string PasswordHash { get; set; } = string.Empty;
-
     // Avoid JSON reference cycles: Snippet -> User -> Snippets -> User -> ...
     [JsonIgnore]
     public List<Snippet> Snippets { get; set; } = new();

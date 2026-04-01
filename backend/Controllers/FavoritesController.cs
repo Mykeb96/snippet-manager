@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
@@ -35,7 +36,7 @@ public class FavoritesController : ControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.Username, f.User.Email),
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .ToListAsync();
 
@@ -51,7 +52,7 @@ public class FavoritesController : ControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.Username, f.User.Email),
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .ToListAsync();
 
@@ -60,6 +61,7 @@ public class FavoritesController : ControllerBase
 
     // POST: api/favorites
     [HttpPost]
+    [Authorize]
     [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<FavoriteResponse>> CreateFavorite(CreateFavoriteRequest request)
     {
@@ -100,7 +102,7 @@ public class FavoritesController : ControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.Username, f.User.Email),
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstAsync();
 
@@ -109,6 +111,7 @@ public class FavoritesController : ControllerBase
 
     // DELETE: api/favorites/user/1/snippet/5
     [HttpDelete("user/{userId:int}/snippet/{snippetId:int}")]
+    [Authorize]
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteFavorite(int userId, int snippetId)
     {

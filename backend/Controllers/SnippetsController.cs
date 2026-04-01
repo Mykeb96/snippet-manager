@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
@@ -43,7 +44,7 @@ public class SnippetsController : ControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.user.Id, s.user.Username, s.user.Email)
+                new UserSummaryResponse(s.user.Id, s.user.UserName ?? string.Empty, s.user.Email ?? string.Empty)
             ))
             .ToListAsync();
     }
@@ -61,7 +62,7 @@ public class SnippetsController : ControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.user.Id, s.user.Username, s.user.Email)
+                new UserSummaryResponse(s.user.Id, s.user.UserName ?? string.Empty, s.user.Email ?? string.Empty)
             ))
             .FirstOrDefaultAsync();
 
@@ -75,6 +76,7 @@ public class SnippetsController : ControllerBase
 
     // POST: api/snippets
     [HttpPost]
+    [Authorize]
     [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<SnippetResponse>> CreateSnippet(CreateSnippetRequest request)
     {
@@ -112,7 +114,7 @@ public class SnippetsController : ControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.user.Id, s.user.Username, s.user.Email)
+                new UserSummaryResponse(s.user.Id, s.user.UserName ?? string.Empty, s.user.Email ?? string.Empty)
             ))
             .FirstAsync();
 
@@ -121,6 +123,7 @@ public class SnippetsController : ControllerBase
 
     // DELETE: api/snippets/5
     [HttpDelete("{id}")]
+    [Authorize]
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteSnippet(int id)
     {

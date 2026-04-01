@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
@@ -42,6 +43,7 @@ public class SnippetTagsController : ControllerBase
 
     // POST: api/snippets/5/tags
     [HttpPost]
+    [Authorize]
     [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<SnippetTagResponse>> AddTagToSnippet(int snippetId, AddSnippetTagRequest request)
     {
@@ -90,6 +92,7 @@ public class SnippetTagsController : ControllerBase
 
     // DELETE: api/snippets/5/tags/3
     [HttpDelete("{tagId:int}")]
+    [Authorize]
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> RemoveTagFromSnippet(int snippetId, int tagId)
     {
