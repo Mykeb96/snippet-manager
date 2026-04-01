@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using backend.Data;
 using backend.Models;
 
@@ -10,7 +9,7 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SnippetsController : ControllerBase
+public class SnippetsController : ApiControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -161,11 +160,5 @@ public class SnippetsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
-    }
-
-    private int? GetCurrentUserId()
-    {
-        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(value, out var userId) ? userId : null;
     }
 }
