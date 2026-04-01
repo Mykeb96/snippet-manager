@@ -44,7 +44,7 @@ public class FavoritesController : ApiControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .ToListAsync();
 
@@ -68,7 +68,7 @@ public class FavoritesController : ApiControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .ToListAsync();
 
@@ -84,7 +84,7 @@ public class FavoritesController : ApiControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstOrDefaultAsync();
 
@@ -138,7 +138,7 @@ public class FavoritesController : ApiControllerBase
             .Select(f => new FavoriteResponse(
                 f.UserId,
                 f.SnippetId,
-                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty, f.User.Email ?? string.Empty),
+                new SnippetsController.UserSummaryResponse(f.User.Id, f.User.UserName ?? string.Empty),
                 new SnippetSummaryResponse(f.Snippet.Id, f.Snippet.Title, f.Snippet.Code, f.Snippet.Language)))
             .FirstAsync();
 

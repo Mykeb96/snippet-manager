@@ -68,7 +68,7 @@ public class TagsController : ApiControllerBase
             return BadRequest("Name is required.");
         }
 
-        var normalizedName = request.Name.Trim();
+        var normalizedName = request.Name.Trim().ToLowerInvariant();
 
         var duplicateTag = await _context.Tags.FirstOrDefaultAsync(t => t.Name == normalizedName);
         if (duplicateTag is not null)

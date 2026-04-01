@@ -19,7 +19,7 @@ public class SnippetsController : ApiControllerBase
     }
 
     public record CreateSnippetRequest(string Title, string Code, string Language);
-    public record UserSummaryResponse(int Id, string Username, string Email);
+    public record UserSummaryResponse(int Id, string Username);
     public record SnippetResponse(
         int Id,
         string Title,
@@ -43,6 +43,7 @@ public class SnippetsController : ApiControllerBase
             .OrderByDescending(s => s.CreatedAt)
             .Skip(skip)
             .Take(take)
+            // Identity fields are nullable at the schema level; API DTOs keep a non-null string contract.
             .Select(s => new SnippetResponse(
                 s.Id,
                 s.Title,
@@ -50,7 +51,7 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty, s.User.Email ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
             ))
             .ToListAsync();
     }
@@ -68,7 +69,7 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty, s.User.Email ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
             ))
             .FirstOrDefaultAsync();
 
@@ -118,7 +119,7 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty, s.User.Email ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
             ))
             .FirstAsync();
 

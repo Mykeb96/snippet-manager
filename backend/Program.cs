@@ -147,16 +147,6 @@ static string GetClientKey(HttpContext context)
         return $"user:{userId}";
     }
 
-    var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-    if (!string.IsNullOrWhiteSpace(forwardedFor))
-    {
-        var firstForwardedIp = forwardedFor.Split(',')[0].Trim();
-        if (!string.IsNullOrWhiteSpace(firstForwardedIp))
-        {
-            return $"ip:{firstForwardedIp}";
-        }
-    }
-
     return $"ip:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
 }
 

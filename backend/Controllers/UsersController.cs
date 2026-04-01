@@ -38,7 +38,7 @@ public class UsersController : ApiControllerBase
     }
 
     // GET: api/users/5
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<UserResponse>> GetUser(int id)
     {
         var user = await _context.Users
