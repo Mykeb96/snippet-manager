@@ -55,12 +55,26 @@ REST routes live under `/api`, for example:
 
 Use Swagger while developing to try requests and see schemas.
 
+## Configuration and secrets
+
+Production-style convention in this repo is:
+
+- **Use environment variables as the primary secret/config source** (especially in deployed environments).
+- **Do not commit secrets** (`Jwt:Key`, admin seed password, production DB credentials) to repo JSON files.
+- **Optionally use user secrets only for local development convenience**.
+
+Common environment variable keys:
+
+- `Jwt__Key` (required in all environments; minimum 32 chars)
+- `ConnectionStrings__DefaultConnection` (required outside Development; production cannot use `Data Source=app.db`)
+- `AdminSeed__Password` (optional, Development only, used when first creating the dev admin)
+
 ## Dev notes
 
 - **Auth model:** ASP.NET Core Identity + JWT bearer tokens.
 - **Write authorization:** write routes require authentication, and snippet/favorite/tag-link writes enforce ownership based on the JWT user id claim.
 - **Roles:** tag creation/deletion requires the `Admin` role (`[Authorize(Roles = "Admin")]`).
 - **Tag management rule:** tags are shared/global metadata; deletion is blocked while a tag is in use by snippets.
-- **Development admin seed:** on startup in Development, the app ensures an admin user/role exists. Defaults come from `AdminSeed` in `appsettings.Development.json` (email `admin@snippet.local`, password `Admin1234`).
-- **JWT secret handling:** configure `Jwt:Key` via environment variables or user secrets. In Development only, a fallback key is used if missing (warning logged). Outside Development, startup fails if no key is provided.
-- **SQLite** is fine for development; deploy would typically switch to a managed database and configuration via environment variables or user secrets.
+- **Development admin seed:** on startup in Development, the app ensures an admin role exists and creates the admin user only when `AdminSeed:Password` is provided (for example via `AdminSeed__Password`).
+- **JWT secret handling:** configure `Jwt:Key` via environment variables (or user secrets locally). There is no hardcoded fallback. Startup fails if missing, with a development-friendly setup message in Development.
+- **Database config:** Development can use local SQLite. Outside Development, `ConnectionStrings:DefaultConnection` must be explicitly configured and cannot be the development fallback `Data Source=app.db`.

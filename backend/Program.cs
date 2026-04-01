@@ -14,11 +14,11 @@ using backend.Security;
 var builder = WebApplication.CreateBuilder(args);
 
 var jwtSettings = BuildJwtSettings(builder.Configuration, builder.Environment);
+var connectionString = BuildConnectionString(builder.Configuration, builder.Environment);
 
 // Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=app.db";
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 builder.Services.AddSwaggerGen(options =>
@@ -152,8 +152,6 @@ static string GetClientKey(HttpContext context)
 
 static JwtSettings BuildJwtSettings(IConfiguration configuration, IWebHostEnvironment environment)
 {
-    const string devFallbackKey = "dev-only-super-secret-key-change-me";
-
     var issuer = configuration["Jwt:Issuer"] ?? "snippet-manager-api";
     var audience = configuration["Jwt:Audience"] ?? "snippet-manager-client";
     var key = configuration["Jwt:Key"];
@@ -162,16 +160,15 @@ static JwtSettings BuildJwtSettings(IConfiguration configuration, IWebHostEnviro
     {
         if (environment.IsDevelopment())
         {
-            Console.WriteLine("WARNING: Jwt:Key is not configured. Using development fallback key.");
-            key = devFallbackKey;
+            throw new InvalidOperationException(
+                "Jwt:Key is missing. Set it via environment variable (Jwt__Key) or user secrets: " +
+                "dotnet user-secrets set \"Jwt:Key\" \"<at-least-32-char-secret>\".");
         }
-        else
-        {
-            throw new InvalidOperationException("Jwt:Key must be configured outside Development.");
-        }
+
+        throw new InvalidOperationException("Jwt:Key must be configured for all non-development environments.");
     }
 
-    if (!environment.IsDevelopment() && key.Length < 32)
+    if (key.Length < 32)
     {
         throw new InvalidOperationException("Jwt:Key is too short. Use at least 32 characters.");
     }
@@ -182,6 +179,31 @@ static JwtSettings BuildJwtSettings(IConfiguration configuration, IWebHostEnviro
         Audience = audience,
         Key = key
     };
+}
+
+static string BuildConnectionString(IConfiguration configuration, IWebHostEnvironment environment)
+{
+    const string devFallbackConnection = "Data Source=app.db";
+
+    var configuredConnection = configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(configuredConnection))
+    {
+        if (environment.IsDevelopment())
+        {
+            Console.WriteLine("WARNING: ConnectionStrings:DefaultConnection is not configured. Using development fallback SQLite database.");
+            return devFallbackConnection;
+        }
+
+        throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured outside Development.");
+    }
+
+    if (!environment.IsDevelopment() &&
+        string.Equals(configuredConnection, devFallbackConnection, StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException("Production configuration cannot use the development SQLite fallback connection string.");
+    }
+
+    return configuredConnection;
 }
 
 var app = builder.Build();

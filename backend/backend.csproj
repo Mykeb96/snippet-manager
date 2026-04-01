@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,6 +7,7 @@
     <!-- Matches C# namespaces (backend.Controllers, backend.Models, …). Explicit AssemblyName avoids odd output when the project file was misnamed. -->
     <RootNamespace>backend</RootNamespace>
     <AssemblyName>backend</AssemblyName>
+    <UserSecretsId>6023d5e5-2abf-4c62-9838-03d74e2a478a</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
