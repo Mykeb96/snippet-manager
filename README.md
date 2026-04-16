@@ -16,6 +16,15 @@ Full-stack app for saving and organizing code snippets: a **ASP.NET Core** REST 
 
 ## Run the API
 
+The API will not start until **`Jwt:Key`** is set (minimum 32 characters). It is intentionally not committed to the repo. For **local development**, set it once with user secrets from the `backend` folder:
+
+```bash
+cd backend
+dotnet user-secrets set "Jwt:Key" "<your-secret-at-least-32-chars>"
+```
+
+Alternatively set the environment variable **`Jwt__Key`** to the same value. See [Configuration and secrets](#configuration-and-secrets) for production-style env vars.
+
 From the repo root:
 
 ```bash

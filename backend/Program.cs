@@ -46,8 +46,7 @@ builder.Services
         options.User.RequireUniqueEmail = true;
     })
     .AddRoles<IdentityRole<int>>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddSignInManager();
+    .AddEntityFrameworkStores<AppDbContext>();
 
 builder.Services.AddSingleton(jwtSettings);
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
