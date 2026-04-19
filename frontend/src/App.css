@@ -1744,6 +1744,86 @@ a.avatar-btn {
   .header-signin {
     order: 2;
   }
+
+  /* More horizontal room for feed + snippet cards on phones */
+  .app-main {
+    padding-inline: var(--space-sm);
+    padding-block: var(--space-md);
+  }
+
+  .feed-layout,
+  .profile-layout {
+    max-width: none;
+    width: 100%;
+    border-radius: var(--radius-lg);
+  }
+
+  .compose {
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  /* Avatar sits beside fields on desktop; on narrow screens it steals a full column — hide so fields span full width. */
+  .compose__avatar {
+    display: none;
+  }
+
+  .compose__code {
+    min-height: 7rem;
+    margin-block: var(--space-md);
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .feed-banner {
+    padding-inline: var(--space-sm);
+  }
+
+  .profile-layout__body {
+    padding: var(--space-md);
+  }
+
+  .snippet-card {
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-sm);
+  }
+
+  .snippet-card__avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 0.875rem;
+  }
+
+  .snippet-card__code-wrap {
+    max-height: min(50vh, 22rem);
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .snippet-card__code {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  .snippet-card__footer {
+    width: 100%;
+    gap: var(--space-md);
+    align-items: center;
+  }
+
+  .snippet-card__tags {
+    flex: 1;
+    min-width: 0;
+    gap: 0.4rem;
+  }
+
+  .snippet-card__tag {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.72rem;
+  }
+
+  .snippet-card__lang {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
 }
 
 /* Auth */
