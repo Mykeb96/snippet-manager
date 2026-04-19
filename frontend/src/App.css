@@ -1478,10 +1478,13 @@ a.avatar-btn {
 
 .snippet-card__title {
   margin: 0 0 var(--space-sm);
+  max-width: 100%;
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.35;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .snippet-card__code-wrap {
