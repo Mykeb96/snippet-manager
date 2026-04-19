@@ -29,9 +29,9 @@ export default function AppLayout() {
             <NavLink to="/" end className={({ isActive }) => navClassName(isActive)}>
               Home
             </NavLink>
-            <a className="nav-link" href="/faq">
+            <NavLink to="/faq" className={({ isActive }) => navClassName(isActive)}>
               FAQ
-            </a>
+            </NavLink>
             <a className="nav-link" href="/contact">
               Contact
             </a>
