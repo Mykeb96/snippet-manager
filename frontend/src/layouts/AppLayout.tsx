@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 
 function navClassName(isActive: boolean) {
   return ['nav-link', isActive ? 'nav-link--active' : ''].filter(Boolean).join(' ')
@@ -9,6 +10,8 @@ function avatarClassName(isActive: boolean) {
 }
 
 export default function AppLayout() {
+  const { user } = useAuth()
+
   return (
     <div className="app">
       <a href="#main" className="skip-link">
@@ -37,15 +40,21 @@ export default function AppLayout() {
             </NavLink>
           </nav>
 
-          <NavLink
-            to="/profile"
-            className={({ isActive }) => avatarClassName(isActive)}
-            aria-label="Profile"
-          >
-            <span className="avatar-fallback" aria-hidden="true">
-              U
-            </span>
-          </NavLink>
+          {user ? (
+            <NavLink
+              to="/profile"
+              className={({ isActive }) => avatarClassName(isActive)}
+              aria-label="Profile"
+            >
+              <span className="avatar-fallback" aria-hidden="true">
+                {user.username.slice(0, 1).toUpperCase()}
+              </span>
+            </NavLink>
+          ) : (
+            <Link className="header-signin" to="/auth">
+              Sign in
+            </Link>
+          )}
         </div>
       </header>
 

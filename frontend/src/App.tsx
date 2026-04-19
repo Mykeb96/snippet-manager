@@ -3,6 +3,8 @@ import AppLayout from './layouts/AppLayout'
 import HomePage from './pages/HomePage'
 import FaqPage from './pages/FaqPage'
 import ContactPage from './pages/ContactPage'
+import AuthPage from './pages/AuthPage'
+import ProtectedRoute from './components/ProtectedRoute'
 import ProfileLayout from './pages/profile/ProfileLayout'
 import MySnippetsPage from './pages/profile/MySnippetsPage'
 import FavoritesPage from './pages/profile/FavoritesPage'
@@ -16,11 +18,14 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="faq" element={<FaqPage />} />
         <Route path="contact" element={<ContactPage />} />
-        <Route path="profile" element={<ProfileLayout />}>
-          <Route index element={<Navigate to="my-snippets" replace />} />
-          <Route path="my-snippets" element={<MySnippetsPage />} />
-          <Route path="favorites" element={<FavoritesPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+        <Route path="auth" element={<AuthPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="profile" element={<ProfileLayout />}>
+            <Route index element={<Navigate to="my-snippets" replace />} />
+            <Route path="my-snippets" element={<MySnippetsPage />} />
+            <Route path="favorites" element={<FavoritesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
         </Route>
       </Route>
     </Routes>

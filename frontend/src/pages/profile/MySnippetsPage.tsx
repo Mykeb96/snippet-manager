@@ -5,7 +5,7 @@ export default function MySnippetsPage() {
         My snippets
       </h2>
       <p className="profile-panel__lede">
-        Snippets you&apos;ve posted will appear here. This list will connect to your account once the API is wired up.
+        Snippets you&apos;ve posted will appear here once this view is connected to the API.
       </p>
       <p className="profile-panel__muted">No snippets to show yet.</p>
     </section>

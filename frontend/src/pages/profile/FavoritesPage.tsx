@@ -5,7 +5,7 @@ export default function FavoritesPage() {
         Favorites
       </h2>
       <p className="profile-panel__lede">
-        Save snippets you want to revisit. Favorites will sync with the backend when that feature is available.
+        Snippets you&apos;ve favorited from the feed will appear here when this view is wired to the API.
       </p>
       <p className="profile-panel__muted">You haven&apos;t favorited anything yet.</p>
     </section>

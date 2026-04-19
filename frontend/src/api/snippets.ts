@@ -89,4 +89,32 @@ export async function fetchSnippetsPage(page: number, pageSize = PAGE_SIZE): Pro
   }
 }
 
+/**
+ * Creates a snippet (requires JWT). Ignored when using mock data for feeds.
+ */
+export async function createSnippet(
+  input: { title: string; code: string; language: string; tagIds?: number[] },
+  accessToken: string,
+): Promise<SnippetDto> {
+  const base = getApiBaseUrl()
+  const res = await fetch(`${base}/api/snippets`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      title: input.title,
+      code: input.code,
+      language: input.language,
+      tagIds: input.tagIds?.length ? input.tagIds : undefined,
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || `Failed to post snippet (${res.status})`)
+  }
+  return (await res.json()) as SnippetDto
+}
+
 export { PAGE_SIZE }
