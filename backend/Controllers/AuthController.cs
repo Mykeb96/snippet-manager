@@ -13,7 +13,7 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController : ApiControllerBase
 {
     private readonly UserManager<User> _userManager;
     private readonly JwtSettings _jwtSettings;
@@ -27,6 +27,39 @@ public class AuthController : ControllerBase
     public record RegisterRequest(string Username, string Email, string Password);
     public record LoginRequest(string Email, string Password);
     public record AuthResponse(int UserId, string Username, string Email, string AccessToken, DateTime ExpiresAtUtc);
+
+    public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+    // POST: api/auth/change-password
+    [HttpPost("change-password")]
+    [Authorize]
+    [EnableRateLimiting("WritePolicy")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest("Current password and new password are required.");
+        }
+
+        if (RequireCurrentUserId(out var userId) is ActionResult authError)
+        {
+            return authError;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            return BadRequest(string.Join(" ", result.Errors.Select(e => e.Description)));
+        }
+
+        return NoContent();
+    }
 
     // POST: api/auth/register
     [HttpPost("register")]

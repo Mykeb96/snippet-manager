@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 function navClassName(isActive: boolean) {
@@ -10,7 +10,13 @@ function avatarClassName(isActive: boolean) {
 }
 
 export default function AppLayout() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleSignOut() {
+    logout()
+    navigate('/', { replace: true })
+  }
 
   return (
     <div className="app">
@@ -41,15 +47,20 @@ export default function AppLayout() {
           </nav>
 
           {user ? (
-            <NavLink
-              to="/profile"
-              className={({ isActive }) => avatarClassName(isActive)}
-              aria-label="Profile"
-            >
-              <span className="avatar-fallback" aria-hidden="true">
-                {user.username.slice(0, 1).toUpperCase()}
-              </span>
-            </NavLink>
+            <div className="app-header__session">
+              <NavLink
+                to="/profile"
+                className={({ isActive }) => avatarClassName(isActive)}
+                aria-label="Profile"
+              >
+                <span className="avatar-fallback" aria-hidden="true">
+                  {user.username.slice(0, 1).toUpperCase()}
+                </span>
+              </NavLink>
+              <button type="button" className="header-signout" onClick={handleSignOut}>
+                Sign out
+              </button>
+            </div>
           ) : (
             <Link className="header-signin" to="/auth">
               Sign in

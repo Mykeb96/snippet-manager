@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { PasswordField } from '../components/PasswordField'
 
 type Mode = 'login' | 'register'
 
@@ -109,24 +110,22 @@ export default function AuthPage() {
               required
             />
           </label>
-          <label className="auth-field">
-            <span className="auth-field__label">Password</span>
-            <input
-              className="auth-field__input"
-              type="password"
-              name="password"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-            {mode === 'register' && (
-              <span className="auth-field__hint">
-                At least 8 characters with upper, lower, and a number.
-              </span>
-            )}
-          </label>
+          <PasswordField
+            label="Password"
+            name="password"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            hint={
+              mode === 'register' ? (
+                <span className="auth-field__hint">
+                  At least 8 characters with upper, lower, and a number.
+                </span>
+              ) : undefined
+            }
+          />
 
           {error && (
             <div className="auth-error" role="alert">

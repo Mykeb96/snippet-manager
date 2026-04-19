@@ -51,3 +51,21 @@ export async function register(body: {
   if (!res.ok) throw new Error(await parseError(res))
   return res.json() as Promise<AuthResponseDto>
 }
+
+export async function changePassword(
+  body: { currentPassword: string; newPassword: string },
+  accessToken: string,
+): Promise<void> {
+  const res = await fetch(`${getApiBaseUrl()}/api/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      currentPassword: body.currentPassword,
+      newPassword: body.newPassword,
+    }),
+  })
+  if (!res.ok) throw new Error(await parseError(res))
+}

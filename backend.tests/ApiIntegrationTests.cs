@@ -279,6 +279,48 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     }
 
     [Fact]
+    public async Task ChangePassword_ValidCurrent_Returns204_LoginAcceptsNewPassword()
+    {
+        const string email = "chgpw@test.local";
+        var token = await RegisterAndLoginAsync("chgpw", email, "FirstPass1!");
+
+        var changeBody = JsonSerializer.Serialize(
+            new { currentPassword = "FirstPass1!", newPassword = "SecondPass2!" },
+            JsonOptions);
+        var changeReq = new HttpRequestMessage(HttpMethod.Post, "/api/auth/change-password")
+        {
+            Content = new StringContent(changeBody, Encoding.UTF8, "application/json"),
+        };
+        changeReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var changeRes = await _client.SendAsync(changeReq);
+        Assert.Equal(HttpStatusCode.NoContent, changeRes.StatusCode);
+
+        var oldLoginBody = JsonSerializer.Serialize(new { email, password = "FirstPass1!" }, JsonOptions);
+        var oldLogin = await _client.PostAsync(
+            "/api/auth/login",
+            new StringContent(oldLoginBody, Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.Unauthorized, oldLogin.StatusCode);
+
+        var newLoginBody = JsonSerializer.Serialize(new { email, password = "SecondPass2!" }, JsonOptions);
+        var newLogin = await _client.PostAsync(
+            "/api/auth/login",
+            new StringContent(newLoginBody, Encoding.UTF8, "application/json"));
+        newLogin.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task ChangePassword_WithoutToken_Returns401()
+    {
+        var body = JsonSerializer.Serialize(
+            new { currentPassword = "Oldpass1!", newPassword = "NewpassWord2!" },
+            JsonOptions);
+        var res = await _client.PostAsync(
+            "/api/auth/change-password",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
     public async Task GetTags_PaginationHeaders_AreSet()
     {
         var response = await _client.GetAsync("/api/tags?page=2&pageSize=5");
