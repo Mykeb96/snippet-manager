@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using backend;
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -245,6 +246,44 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
         var token = await RegisterAndLoginAsync("badtag", "badtag@test.local", "Badtagpassword1!");
         var body = JsonSerializer.Serialize(
             new { title = "x", code = "y", language = "csharp", tagIds = new[] { 999_999 } },
+            JsonOptions);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/snippets")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PostSnippet_TitleTooLong_Returns400()
+    {
+        var token = await RegisterAndLoginAsync("longtitle", "longtitle@test.local", "Longtitlepassword1!");
+        var longTitle = new string('a', SnippetLimits.MaxTitleLength + 1);
+        var body = JsonSerializer.Serialize(
+            new { title = longTitle, code = "x", language = "csharp" },
+            JsonOptions);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/snippets")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PostSnippet_CodeTooLong_Returns400()
+    {
+        var token = await RegisterAndLoginAsync("longcode", "longcode@test.local", "Longcodepassword1!");
+        var longCode = new string('x', SnippetLimits.MaxCodeLength + 1);
+        var body = JsonSerializer.Serialize(
+            new { title = "ok", code = longCode, language = "csharp" },
             JsonOptions);
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/snippets")

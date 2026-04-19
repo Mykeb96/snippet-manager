@@ -25,6 +25,7 @@ import { SnippetCopyButton } from '../components/SnippetCopyButton'
 import { SnippetDeleteButton } from '../components/SnippetDeleteButton'
 import { confirmDeleteSnippet } from '../utils/confirmDeleteSnippet'
 import { canDeleteSnippet } from '../utils/snippetPermissions'
+import { SNIPPET_MAX_CODE_LENGTH, SNIPPET_MAX_TITLE_LENGTH } from '../constants/snippetLimits'
 
 export default function HomePage() {
   const { user, token } = useAuth()
@@ -288,6 +289,11 @@ export default function HomePage() {
     const c = code.trim()
     if (!t || !c) return
 
+    if (code.length > SNIPPET_MAX_CODE_LENGTH) {
+      setComposeError(`Code must be at most ${SNIPPET_MAX_CODE_LENGTH.toLocaleString()} characters.`)
+      return
+    }
+
     const tagObjects = tagOptions.filter((tag) => selectedTagIds.includes(tag.id))
     const tagIds = selectedTagIds.length > 0 ? selectedTagIds : undefined
 
@@ -360,7 +366,7 @@ export default function HomePage() {
               placeholder="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              maxLength={200}
+              maxLength={SNIPPET_MAX_TITLE_LENGTH}
               autoComplete="off"
             />
             <textarea
@@ -368,6 +374,7 @@ export default function HomePage() {
               placeholder="Paste or write your snippet…"
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              maxLength={SNIPPET_MAX_CODE_LENGTH}
               rows={5}
               spellCheck={false}
             />

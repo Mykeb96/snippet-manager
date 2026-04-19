@@ -101,6 +101,17 @@ public class SnippetsController : ApiControllerBase
             return BadRequest("Title, Code, and Language are required.");
         }
 
+        var trimmedTitle = request.Title.Trim();
+        if (trimmedTitle.Length > SnippetLimits.MaxTitleLength)
+        {
+            return BadRequest($"Title must be at most {SnippetLimits.MaxTitleLength} characters.");
+        }
+
+        if (request.Code.Length > SnippetLimits.MaxCodeLength)
+        {
+            return BadRequest($"Code must be at most {SnippetLimits.MaxCodeLength} characters.");
+        }
+
         if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
             return authError;
@@ -108,7 +119,7 @@ public class SnippetsController : ApiControllerBase
 
         var snippet = new Snippet
         {
-            Title = request.Title.Trim(),
+            Title = trimmedTitle,
             Code = request.Code,
             Language = request.Language.Trim(),
             UserId = currentUserId
