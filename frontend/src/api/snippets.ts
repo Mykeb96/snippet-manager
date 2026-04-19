@@ -3,13 +3,18 @@
 import { fetchMockSnippetsPage } from '../data/mockSnippets'
 
 /** Set `VITE_USE_SNIPPET_API=true` when the backend is running; otherwise the mock pool is used. */
-function isRealSnippetApiEnabled(): boolean {
+export function isRealSnippetApiEnabled(): boolean {
   return import.meta.env.VITE_USE_SNIPPET_API === 'true'
 }
 
 export type SnippetUserDto = {
   id: number
   username: string
+}
+
+export type TagDto = {
+  id: number
+  name: string
 }
 
 export type SnippetDto = {
@@ -20,6 +25,7 @@ export type SnippetDto = {
   createdAt: string
   userId: number
   user: SnippetUserDto
+  tags: TagDto[]
 }
 
 const DEFAULT_API = 'http://localhost:5090'

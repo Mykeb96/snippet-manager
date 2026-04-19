@@ -176,6 +176,54 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     }
 
     [Fact]
+    public async Task PostSnippet_WithValidTagIds_ReturnsSnippetWithTags()
+    {
+        var token = await RegisterAndLoginAsync("tagged", "tagged@test.local", "Taggedpassword1!");
+
+        var tagsResponse = await _client.GetAsync("/api/tags?page=1&pageSize=20");
+        tagsResponse.EnsureSuccessStatusCode();
+        var tags = await DeserializeAsync<List<TagResponseDto>>(tagsResponse);
+        Assert.True(tags.Count >= 2, "Seeded tags should be available.");
+
+        var tagIds = new[] { tags[0].Id, tags[1].Id };
+        var body = JsonSerializer.Serialize(
+            new { title = "Tagged", code = "x", language = "csharp", tagIds },
+            JsonOptions);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/snippets")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var snippet = await DeserializeAsync<SnippetWithTagsDto>(response);
+        Assert.Equal(2, snippet.Tags.Count);
+        Assert.Contains(snippet.Tags, t => t.Id == tagIds[0]);
+        Assert.Contains(snippet.Tags, t => t.Id == tagIds[1]);
+    }
+
+    [Fact]
+    public async Task PostSnippet_WithInvalidTagId_Returns400()
+    {
+        var token = await RegisterAndLoginAsync("badtag", "badtag@test.local", "Badtagpassword1!");
+        var body = JsonSerializer.Serialize(
+            new { title = "x", code = "y", language = "csharp", tagIds = new[] { 999_999 } },
+            JsonOptions);
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/snippets")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetTags_PaginationHeaders_AreSet()
     {
         var response = await _client.GetAsync("/api/tags?page=2&pageSize=5");
@@ -253,4 +301,8 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     private sealed record AuthResponseDto(int UserId, string Username, string Email, string AccessToken, DateTime ExpiresAtUtc);
 
     private sealed record SnippetResponseDto(int Id);
+
+    private sealed record TagResponseDto(int Id, string Name);
+
+    private sealed record SnippetWithTagsDto(int Id, List<TagResponseDto> Tags);
 }

@@ -1,4 +1,5 @@
-import type { FetchSnippetsPageResult, SnippetDto } from '../api/snippets'
+import type { FetchSnippetsPageResult, SnippetDto, TagDto } from '../api/snippets'
+import { MOCK_TAGS } from './mockTags'
 
 const MOCK_USER_POOL = [
   { id: 1, username: 'devguru' },
@@ -85,6 +86,18 @@ function buildSnippetBody(i: number, lang: string): string {
   }
 }
 
+/** 2–4 tags per snippet so feed cards always show realistic chip styling. */
+function tagsForIndex(i: number): TagDto[] {
+  const count = 2 + (i % 3)
+  const start = (i * 5) % MOCK_TAGS.length
+  const out: TagDto[] = []
+  for (let k = 0; k < count; k++) {
+    const t = MOCK_TAGS[(start + k) % MOCK_TAGS.length]
+    if (!out.some((x) => x.id === t.id)) out.push(t)
+  }
+  return out.length >= 2 ? out : [MOCK_TAGS[0], MOCK_TAGS[1]]
+}
+
 function buildAllMockSnippets(count: number): SnippetDto[] {
   return Array.from({ length: count }, (_, i) => {
     const user = MOCK_USER_POOL[i % MOCK_USER_POOL.length]
@@ -101,6 +114,7 @@ function buildAllMockSnippets(count: number): SnippetDto[] {
       createdAt: created.toISOString(),
       userId: user.id,
       user: { id: user.id, username: user.username },
+      tags: tagsForIndex(i),
     }
   })
 }

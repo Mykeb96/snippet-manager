@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react'
-import { fetchSnippetsPage, PAGE_SIZE, type SnippetDto } from '../api/snippets'
+import { useState, useEffect, useRef, useCallback, useMemo, type FormEvent } from 'react'
+import { fetchSnippetsPage, PAGE_SIZE, type SnippetDto, type TagDto } from '../api/snippets'
+import { fetchTagsForCompose } from '../api/tags'
 import { formatFeedTime } from '../utils/formatFeedTime'
+import { formatTagDisplayName } from '../utils/formatTagDisplayName'
 
 export default function HomePage() {
   const [snippets, setSnippets] = useState<SnippetDto[]>([])
@@ -16,6 +18,23 @@ export default function HomePage() {
   const [title, setTitle] = useState('')
   const [code, setCode] = useState('')
   const [language, setLanguage] = useState('typescript')
+  const [tagOptions, setTagOptions] = useState<TagDto[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+  const [tagFilter, setTagFilter] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchTagsForCompose()
+      .then((tags) => {
+        if (!cancelled) setTagOptions(tags)
+      })
+      .catch(() => {
+        if (!cancelled) setTagOptions([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -104,11 +123,29 @@ export default function HomePage() {
     }
   }
 
+  const filteredTagOptions = useMemo(() => {
+    const q = tagFilter.trim().toLowerCase()
+    if (!q) return tagOptions
+    return tagOptions.filter((t) => {
+      const slug = t.name.toLowerCase()
+      const label = formatTagDisplayName(t.name).toLowerCase()
+      return slug.includes(q) || label.includes(q)
+    })
+  }, [tagOptions, tagFilter])
+
+  function toggleComposeTag(id: number) {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].sort((a, b) => a - b),
+    )
+  }
+
   function handlePostSnippet(e: FormEvent) {
     e.preventDefault()
     const t = title.trim()
     const c = code.trim()
     if (!t || !c) return
+
+    const tagObjects = tagOptions.filter((tag) => selectedTagIds.includes(tag.id))
 
     const optimistic: SnippetDto = {
       id: -Date.now(),
@@ -118,10 +155,12 @@ export default function HomePage() {
       createdAt: new Date().toISOString(),
       userId: 0,
       user: { id: 0, username: 'you' },
+      tags: tagObjects,
     }
     setSnippets((prev) => [optimistic, ...prev])
     setTitle('')
     setCode('')
+    setSelectedTagIds([])
   }
 
   const canPost = title.trim().length > 0 && code.trim().length > 0
@@ -150,6 +189,46 @@ export default function HomePage() {
             rows={5}
             spellCheck={false}
           />
+          {tagOptions.length > 0 && (
+            <fieldset className="compose__tags">
+              <legend className="compose__tags-legend">Tags</legend>
+              <p className="compose__tags-hint">
+                Frameworks and topics (e.g. React, Next.js). Language for the code block is set below.
+              </p>
+              <label htmlFor="compose-tag-filter" className="visually-hidden">
+                Filter tags
+              </label>
+              <input
+                id="compose-tag-filter"
+                type="search"
+                className="compose__tags-filter"
+                placeholder="Filter tags…"
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+                autoComplete="off"
+              />
+              <div className="compose__tags-scroll">
+                <div className="compose__tags-grid">
+                  {filteredTagOptions.map((tag) => (
+                    <label key={tag.id} className="compose__tag-option">
+                      <input
+                        type="checkbox"
+                        className="compose__tag-input"
+                        checked={selectedTagIds.includes(tag.id)}
+                        onChange={() => toggleComposeTag(tag.id)}
+                      />
+                      <span className="compose__tag-text">{formatTagDisplayName(tag.name)}</span>
+                    </label>
+                  ))}
+                </div>
+                {filteredTagOptions.length === 0 && (
+                  <p className="compose__tags-empty" role="status">
+                    No tags match your filter.
+                  </p>
+                )}
+              </div>
+            </fieldset>
+          )}
           <div className="compose__toolbar">
             <label className="compose__lang-label">
               <span className="visually-hidden">Language</span>
@@ -222,6 +301,15 @@ export default function HomePage() {
                   <code className="snippet-card__code">{s.code}</code>
                 </pre>
                 <footer className="snippet-card__footer">
+                  {(s.tags?.length ?? 0) > 0 && (
+                    <ul className="snippet-card__tags" aria-label="Tags">
+                      {(s.tags ?? []).map((tag) => (
+                        <li key={tag.id}>
+                          <span className="snippet-card__tag">{formatTagDisplayName(tag.name)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   <span className="snippet-card__lang">{s.language}</span>
                 </footer>
               </div>

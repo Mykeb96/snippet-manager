@@ -211,7 +211,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
-    await SeedDevelopmentAdminAsync(app);
+    await SeedDevelopmentDataAsync(app);
 }
 
 if (app.Environment.IsDevelopment())
@@ -234,11 +234,13 @@ app.MapControllers();
 
 app.Run();
 
-static async Task SeedDevelopmentAdminAsync(WebApplication app)
+static async Task SeedDevelopmentDataAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
+
+    await SeedTagsAsync(db);
 
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
@@ -282,4 +284,38 @@ static async Task SeedDevelopmentAdminAsync(WebApplication app)
     {
         await userManager.AddToRoleAsync(adminUser, adminRole);
     }
+}
+
+/// <summary>
+/// Inserts a small set of global tags (lowercase names, same convention as <see cref="backend.Controllers.TagsController"/>).
+/// Topics/frameworks — not programming languages; use <see cref="Snippet.Language"/> for syntax.
+/// Safe to run repeatedly: only missing names are added.
+/// </summary>
+static async Task SeedTagsAsync(AppDbContext db)
+{
+    // Matches frontend mock tag list for offline demo (ids 1..N on a fresh database).
+    string[] tagNames =
+    [
+        "react",
+        "nextjs",
+        "aspnet",
+        "vite",
+        "nodejs",
+        "docker",
+        "testing",
+        "api",
+        "patterns",
+        "security"
+    ];
+
+    foreach (var name in tagNames)
+    {
+        var exists = await db.Tags.AsNoTracking().AnyAsync(t => t.Name == name);
+        if (!exists)
+        {
+            db.Tags.Add(new Tag { Name = name });
+        }
+    }
+
+    await db.SaveChangesAsync();
 }

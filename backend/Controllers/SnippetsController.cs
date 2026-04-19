@@ -19,7 +19,7 @@ public class SnippetsController : ApiControllerBase
         _context = context;
     }
 
-    public record CreateSnippetRequest(string Title, string Code, string Language);
+    public record CreateSnippetRequest(string Title, string Code, string Language, int[]? TagIds);
     public record SnippetResponse(
         int Id,
         string Title,
@@ -27,7 +27,8 @@ public class SnippetsController : ApiControllerBase
         string Language,
         DateTime CreatedAt,
         int UserId,
-        UserSummaryResponse User
+        UserSummaryResponse User,
+        IReadOnlyList<TagResponse> Tags
     );
 
     // GET: api/snippets
@@ -55,7 +56,11 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty),
+                s.SnippetTags
+                    .OrderBy(st => st.Tag.Name)
+                    .Select(st => new TagResponse(st.Tag.Id, st.Tag.Name))
+                    .ToList()
             ))
             .ToListAsync(cancellationToken);
     }
@@ -74,7 +79,11 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty),
+                s.SnippetTags
+                    .OrderBy(st => st.Tag.Name)
+                    .Select(st => new TagResponse(st.Tag.Id, st.Tag.Name))
+                    .ToList()
             ))
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -115,6 +124,27 @@ public class SnippetsController : ApiControllerBase
         _context.Snippets.Add(snippet);
         await _context.SaveChangesAsync(cancellationToken);
 
+        if (request.TagIds is { Length: > 0 })
+        {
+            var distinctTagIds = request.TagIds.Where(tid => tid > 0).Distinct().ToArray();
+            if (distinctTagIds.Length > 0)
+            {
+                var existingCount = await _context.Tags.AsNoTracking()
+                    .CountAsync(t => distinctTagIds.Contains(t.Id), cancellationToken);
+                if (existingCount != distinctTagIds.Length)
+                {
+                    return BadRequest("One or more tag ids are invalid.");
+                }
+
+                foreach (var tagId in distinctTagIds)
+                {
+                    _context.SnippetTags.Add(new SnippetTag { SnippetId = snippet.Id, TagId = tagId });
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         var response = await _context.Snippets
             .AsNoTracking()
             .Where(s => s.Id == snippet.Id)
@@ -125,7 +155,11 @@ public class SnippetsController : ApiControllerBase
                 s.Language,
                 s.CreatedAt,
                 s.UserId,
-                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty)
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty),
+                s.SnippetTags
+                    .OrderBy(st => st.Tag.Name)
+                    .Select(st => new TagResponse(st.Tag.Id, st.Tag.Name))
+                    .ToList()
             ))
             .FirstAsync(cancellationToken);
 
