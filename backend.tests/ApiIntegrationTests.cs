@@ -109,6 +109,24 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     }
 
     [Fact]
+    public async Task DeleteSnippet_AsAdmin_DeletesOtherUsersSnippet_Returns204()
+    {
+        var owner = await RegisterAndLoginAsync("own2", "own2-admindel@test.local", "Owner2password1!");
+        var snippetId = await CreateSnippetAsync(owner, "admin can delete", "code", "csharp");
+        var adminToken = await LoginAdminAsync();
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/snippets/{snippetId}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var get = await _client.GetAsync($"/api/snippets/{snippetId}");
+        Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
+    }
+
+    [Fact]
     public async Task PostTag_AsNonAdmin_Returns403_AsAdmin_Returns201()
     {
         var userToken = await RegisterAndLoginAsync("user", "user403tag@test.local", "Userpassword1!");

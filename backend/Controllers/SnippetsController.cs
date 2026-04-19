@@ -188,7 +188,7 @@ public class SnippetsController : ApiControllerBase
             return NotFound();
         }
 
-        if (snippet.UserId != currentUserId)
+        if (snippet.UserId != currentUserId && !User.IsInRole("Admin"))
         {
             return Forbid();
         }

@@ -211,7 +211,7 @@ export default function AdminPage() {
           Tags
         </h2>
         <p className="admin-page__hint">
-          Create tags for the compose form. Deleting a tag removes it from any snippets that reference it.
+          Manage tags. Deleting a tag removes it from any snippets that reference it.
         </p>
         <form className="admin-tag-create" onSubmit={(e) => void handleCreateTag(e)}>
           <input
@@ -266,7 +266,6 @@ export default function AdminPage() {
                 ) : (
                   <>
                     <span className="admin-tag-row__name">{formatTagDisplayName(tag.name)}</span>
-                    <span className="admin-tag-row__id">#{tag.id}</span>
                     <button type="button" className="btn btn--ghost btn--sm" onClick={() => startEdit(tag)}>
                       Edit
                     </button>
