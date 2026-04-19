@@ -198,4 +198,16 @@ export async function createSnippet(
   return (await res.json()) as SnippetDto
 }
 
+export async function deleteSnippet(snippetId: number, accessToken: string): Promise<void> {
+  const base = getApiBaseUrl()
+  const res = await fetch(`${base}/api/snippets/${snippetId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok && res.status !== 404) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || `Failed to delete snippet (${res.status})`)
+  }
+}
+
 export { PAGE_SIZE }

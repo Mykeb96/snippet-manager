@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   fetchSnippetsPage,
   createSnippet,
+  deleteSnippet,
   PAGE_SIZE,
   isRealSnippetApiEnabled,
   type SnippetDto,
@@ -21,6 +22,9 @@ import { useToast } from '../context/ToastProvider'
 import { formatFeedTime } from '../utils/formatFeedTime'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
 import { SnippetCopyButton } from '../components/SnippetCopyButton'
+import { SnippetDeleteButton } from '../components/SnippetDeleteButton'
+import { confirmDeleteSnippet } from '../utils/confirmDeleteSnippet'
+import { canDeleteSnippet } from '../utils/snippetPermissions'
 
 export default function HomePage() {
   const { user, token } = useAuth()
@@ -37,6 +41,7 @@ export default function HomePage() {
 
   const [favoritedIds, setFavoritedIds] = useState<Set<number>>(() => new Set())
   const [favoritingId, setFavoritingId] = useState<number | null>(null)
+  const [deletingSnippetId, setDeletingSnippetId] = useState<number | null>(null)
 
   const loadingLockRef = useRef(false)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -203,6 +208,35 @@ export default function HomePage() {
       pathname: '/auth',
       search: returnTo && returnTo !== '/' ? `returnTo=${encodeURIComponent(returnTo)}` : '',
     })
+  }
+
+  async function handleDeleteSnippet(s: SnippetDto) {
+    if (!canDeleteSnippet(user, s, isRealSnippetApiEnabled(), token)) return
+    const ok = await confirmDeleteSnippet(s.title)
+    if (!ok) return
+    if (!isRealSnippetApiEnabled()) {
+      setSnippets((prev) => prev.filter((x) => x.id !== s.id))
+      showToast('Snippet removed from the feed.')
+      return
+    }
+    if (!token || s.id <= 0) return
+    setDeletingSnippetId(s.id)
+    setLoadError(null)
+    try {
+      await deleteSnippet(s.id, token)
+      setSnippets((prev) => prev.filter((x) => x.id !== s.id))
+      setFavoritedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(s.id)
+        return next
+      })
+      showToast('Snippet deleted.')
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Could not delete snippet.'
+      setLoadError(message)
+    } finally {
+      setDeletingSnippetId(null)
+    }
   }
 
   async function toggleFavorite(snippetId: number) {
@@ -445,6 +479,7 @@ export default function HomePage() {
         {snippets.map((s) => {
           const favorited = favoritedIds.has(s.id)
           const canToggleFav = s.id > 0
+          const showDelete = canDeleteSnippet(user, s, isRealSnippetApiEnabled(), token)
           return (
             <li key={s.id}>
               <article className="snippet-card">
@@ -466,6 +501,12 @@ export default function HomePage() {
                     </div>
                     <div className="snippet-card__actions">
                       <SnippetCopyButton code={s.code} />
+                      {showDelete && (
+                        <SnippetDeleteButton
+                          disabled={deletingSnippetId === s.id}
+                          onClick={() => void handleDeleteSnippet(s)}
+                        />
+                      )}
                       <button
                         type="button"
                         className={[
@@ -474,7 +515,7 @@ export default function HomePage() {
                         ]
                           .filter(Boolean)
                           .join(' ')}
-                        disabled={!canToggleFav || favoritingId === s.id}
+                        disabled={!canToggleFav || favoritingId === s.id || deletingSnippetId === s.id}
                         aria-pressed={favorited}
                         aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
                         title={!user ? 'Sign in to save favorites' : favorited ? 'Remove favorite' : 'Favorite'}

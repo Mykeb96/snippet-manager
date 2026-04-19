@@ -1317,6 +1317,45 @@ a.avatar-btn {
   display: block;
 }
 
+.snippet-card__delete {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.snippet-card__delete:hover:not(:disabled) {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.snippet-card__delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.snippet-card__delete:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.snippet-card__delete-svg {
+  display: block;
+}
+
 .snippet-card__fav {
   flex-shrink: 0;
   display: grid;
@@ -1516,6 +1555,107 @@ a.avatar-btn {
   color: var(--text-primary);
   background: var(--bg-muted);
   border-color: var(--border-strong);
+}
+
+.btn--danger {
+  color: #fecaca;
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.35) 0%, rgba(220, 38, 38, 0.85) 100%);
+  border-color: rgba(248, 113, 113, 0.45);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--danger:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+/* SweetAlert2 — themed to match app (class `swal-app` on popup) */
+.swal-app-container {
+  z-index: 12000;
+}
+
+.swal-app-container.swal2-container.swal2-backdrop-show {
+  background: rgba(6, 8, 12, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.swal2-popup.swal-app {
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.swal2-popup.swal-app .swal2-title.swal-app__title {
+  margin: 0 0 var(--space-sm);
+  padding: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.swal2-popup.swal-app .swal2-html-container.swal-app__html {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.swal2-popup.swal-app .swal2-actions {
+  margin: var(--space-lg) 0 0;
+  gap: var(--space-sm);
+}
+
+.swal2-popup.swal-app .swal-app__btn {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    transform var(--transition-fast);
+}
+
+.swal2-popup.swal-app .swal-app__btn--cancel {
+  color: var(--text-secondary);
+  background: transparent;
+  border-color: var(--border-strong);
+}
+
+.swal2-popup.swal-app .swal-app__btn--cancel:hover {
+  color: var(--text-primary);
+  background: var(--bg-muted);
+}
+
+.swal2-popup.swal-app .swal-app__btn--danger {
+  color: #fecaca;
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.35) 0%, rgba(220, 38, 38, 0.88) 100%);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.swal2-popup.swal-app .swal-app__btn--danger:hover {
+  filter: brightness(1.06);
+}
+
+.swal2-popup.swal-app .swal2-close.swal-app__close {
+  color: var(--text-muted);
+  outline: none;
+  box-shadow: none;
+}
+
+.swal2-popup.swal-app .swal2-close.swal-app__close:hover {
+  color: var(--text-primary);
 }
 
 @media (max-width: 640px) {

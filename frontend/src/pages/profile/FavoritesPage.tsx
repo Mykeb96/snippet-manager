@@ -5,14 +5,19 @@ import {
   removeFavorite,
   type FavoriteListRowDto,
 } from '../../api/favorites'
-import { isRealSnippetApiEnabled, PAGE_SIZE } from '../../api/snippets'
+import { deleteSnippet, isRealSnippetApiEnabled, PAGE_SIZE, type SnippetDto } from '../../api/snippets'
 import { useAuth } from '../../hooks/useAuth'
+import { useToast } from '../../context/ToastProvider'
 import { formatFeedTime } from '../../utils/formatFeedTime'
 import { formatTagDisplayName } from '../../utils/formatTagDisplayName'
 import { SnippetCopyButton } from '../../components/SnippetCopyButton'
+import { SnippetDeleteButton } from '../../components/SnippetDeleteButton'
+import { confirmDeleteSnippet } from '../../utils/confirmDeleteSnippet'
+import { canDeleteSnippet } from '../../utils/snippetPermissions'
 
 export default function FavoritesPage() {
   const { user, token } = useAuth()
+  const { showToast } = useToast()
   const [rows, setRows] = useState<FavoriteListRowDto[]>([])
   const [lastLoadedPage, setLastLoadedPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
@@ -20,6 +25,7 @@ export default function FavoritesPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<number | null>(null)
+  const [deletingSnippetId, setDeletingSnippetId] = useState<number | null>(null)
 
   const fetchPage = useCallback(
     async (pageToFetch: number, append: boolean) => {
@@ -51,8 +57,31 @@ export default function FavoritesPage() {
     void fetchPage(1, false)
   }, [user, token, fetchPage])
 
+  async function handleDeleteSnippetFromFavorite(s: SnippetDto) {
+    if (!canDeleteSnippet(user, s, isRealSnippetApiEnabled(), token)) return
+    const ok = await confirmDeleteSnippet(s.title)
+    if (!ok) return
+    if (!isRealSnippetApiEnabled()) {
+      setRows((prev) => prev.filter((r) => r.snippetId !== s.id))
+      showToast('Removed from the list.')
+      return
+    }
+    if (!token || s.id <= 0) return
+    setDeletingSnippetId(s.id)
+    setError(null)
+    try {
+      await deleteSnippet(s.id, token)
+      setRows((prev) => prev.filter((r) => r.snippetId !== s.id))
+      showToast('Snippet deleted.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete snippet.')
+    } finally {
+      setDeletingSnippetId(null)
+    }
+  }
+
   async function handleUnfavorite(snippetId: number) {
-    if (!token || removingId !== null) return
+    if (!token || removingId !== null || deletingSnippetId !== null) return
     setRemovingId(snippetId)
     setError(null)
     try {
@@ -118,6 +147,8 @@ export default function FavoritesPage() {
         <ul className="profile-my-snippets__list" aria-label="Your favorite snippets">
           {rows.map((row) => {
             const s = favoriteRowToSnippetDto(row)
+            const showDelete = canDeleteSnippet(user, s, isRealSnippetApiEnabled(), token)
+            const actionBusy = removingId === s.id || deletingSnippetId === s.id
             return (
               <li key={`${row.userId}-${row.snippetId}`}>
                 <article className="snippet-card snippet-card--profile">
@@ -139,10 +170,16 @@ export default function FavoritesPage() {
                       </div>
                       <div className="snippet-card__actions">
                         <SnippetCopyButton code={s.code} />
+                        {showDelete && (
+                          <SnippetDeleteButton
+                            disabled={actionBusy}
+                            onClick={() => void handleDeleteSnippetFromFavorite(s)}
+                          />
+                        )}
                         <button
                           type="button"
                           className="snippet-card__fav snippet-card__fav--on"
-                          disabled={removingId === s.id}
+                          disabled={actionBusy}
                           aria-label="Remove from favorites"
                           title="Remove favorite"
                           onClick={() => void handleUnfavorite(s.id)}
