@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout'
 import HomePage from './pages/HomePage'
 import FaqPage from './pages/FaqPage'
+import ContactPage from './pages/ContactPage'
 import ProfileLayout from './pages/profile/ProfileLayout'
 import MySnippetsPage from './pages/profile/MySnippetsPage'
 import FavoritesPage from './pages/profile/FavoritesPage'
@@ -14,6 +15,7 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
         <Route path="faq" element={<FaqPage />} />
+        <Route path="contact" element={<ContactPage />} />
         <Route path="profile" element={<ProfileLayout />}>
           <Route index element={<Navigate to="my-snippets" replace />} />
           <Route path="my-snippets" element={<MySnippetsPage />} />

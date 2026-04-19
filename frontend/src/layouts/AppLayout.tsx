@@ -32,9 +32,9 @@ export default function AppLayout() {
             <NavLink to="/faq" className={({ isActive }) => navClassName(isActive)}>
               FAQ
             </NavLink>
-            <a className="nav-link" href="/contact">
+            <NavLink to="/contact" className={({ isActive }) => navClassName(isActive)}>
               Contact
-            </a>
+            </NavLink>
           </nav>
 
           <NavLink
