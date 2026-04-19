@@ -3,7 +3,7 @@
 import { fetchMockSnippetsPage } from '../data/mockSnippets'
 
 /** Set `VITE_USE_SNIPPET_API=true` when the backend is running; otherwise the mock pool is used. */
-function useRealSnippetApi(): boolean {
+function isRealSnippetApiEnabled(): boolean {
   return import.meta.env.VITE_USE_SNIPPET_API === 'true'
 }
 
@@ -43,7 +43,7 @@ export type FetchSnippetsPageResult = {
  * otherwise infers hasMore from whether the page is full.
  */
 export async function fetchSnippetsPage(page: number, pageSize = PAGE_SIZE): Promise<FetchSnippetsPageResult> {
-  if (!useRealSnippetApi()) {
+  if (!isRealSnippetApiEnabled()) {
     return fetchMockSnippetsPage(page, pageSize)
   }
 
