@@ -2,32 +2,27 @@ const FAQ_ITEMS = [
   {
     question: 'What is Snippet manager?',
     answer:
-      'Snippet manager is a place to save, organize, and browse short pieces of code—like a timeline for snippets you care about. You can post from the home feed and revisit your work from your profile as we connect more features.',
+      'Snippet manager is a small app for sharing and browsing code snippets in a timeline-style feed—similar to a social feed, but focused on short, labeled code posts. You can sign in, post snippets, favorite others’ posts, and manage your own content from your profile.',
+  },
+  {
+    question: 'Do I need an account?',
+    answer:
+      'You can browse the public feed without signing in. To post snippets & save favorites, you need to create an account and sign in.',
   },
   {
     question: 'How does the home feed work?',
     answer:
-      'The feed shows snippets in reverse chronological order. As you scroll, more load automatically (infinite scroll), similar to social timelines. What you see today may use demo data until your account is hooked up to the live API.',
+      'Snippets appear newest first. Scrolling toward the bottom loads more automatically (infinite scroll). The feed lists posts from everyone using the app, not just people you follow.',
   },
   {
-    question: 'Can I edit or delete a snippet after posting?',
+    question: 'What does favoriting a snippet do?',
     answer:
-      'Editing and deleting from the UI are on the roadmap. Once the backend exposes those endpoints, you’ll be able to update or remove snippets from “My snippets” on your profile.',
+      'Favorites are your personal saved list. Tap the heart on a snippet while signed in to add or remove it; you’ll find everything you saved under Profile → Favorites. It doesn’t change the post for anyone else—it’s just for you.',
   },
   {
-    question: 'Where are my snippets stored?',
+    question: 'What can I do from my profile?',
     answer:
-      'When you use the real API, snippets are stored in the app’s database on the server you configure. In local development you might see mock data in the browser so you can test the feed without running the API.',
-  },
-  {
-    question: 'How will I change my password?',
-    answer:
-      'Go to Profile → Settings. Password changes will be available once authentication is wired to the backend; the Settings page is already set up as the home for account security options.',
-  },
-  {
-    question: 'Can other people see my snippets?',
-    answer:
-      'Sharing and visibility rules will follow your product settings. For now, treat posts as visible where the feed is visible; private or follower-only modes can be added when user accounts and permissions are implemented.',
+      'From Profile you can open My snippets (posts you authored), Favorites (posts you saved), and Settings (change your password). You can also remove your own posts from the feed or from those lists when you’re signed in.',
   },
 ] as const
 
@@ -36,9 +31,6 @@ export default function FaqPage() {
     <div className="faq-page">
       <header className="faq-page__header">
         <h1 className="faq-page__title">Frequently asked questions</h1>
-        <p className="faq-page__intro">
-          Quick answers about Snippet manager. We’ll expand this as features ship.
-        </p>
       </header>
 
       <div className="faq-page__body">
