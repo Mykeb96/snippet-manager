@@ -71,6 +71,27 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     }
 
     [Fact]
+    public async Task GetUsers_WithoutToken_Returns401()
+    {
+        var response = await _client.GetAsync("/api/users");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUsers_AsNonAdmin_Returns403()
+    {
+        var userToken = await RegisterAndLoginAsync("noadmin", "noadmin@test.local", "Userpassword1!");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/users");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task DeleteSnippet_AsNonOwner_Returns403()
     {
         var owner = await RegisterAndLoginAsync("owner", "owner403@test.local", "Ownerpassword1!");
