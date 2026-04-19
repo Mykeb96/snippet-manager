@@ -10,7 +10,7 @@ export type AuthUser = {
 export type AuthContextValue = {
   user: AuthUser | null
   token: string | null
-  /** True when the signed-in user has the Admin role (from login/register response). */
+  /** True when the JWT includes the Admin role (derived from the access token, not editable storage fields). */
   isAdmin: boolean
   ready: boolean
   login: (email: string, password: string) => Promise<void>

@@ -2,10 +2,14 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { login as apiLogin, register as apiRegister, type AuthResponseDto } from '../api/auth'
 import { AuthContext } from './authContext'
 import type { AuthUser } from './authContext'
+import { parseRolesFromAccessToken } from '../utils/parseJwtRoles'
 
 const STORAGE_KEY = 'snippet-manager.auth'
 
-type StoredAuth = AuthUser & {
+type StoredAuth = {
+  userId: number
+  username: string
+  email: string
   accessToken: string
   expiresAtUtc: string
 }
@@ -20,9 +24,6 @@ function readStoredAuth(): StoredAuth | null {
       localStorage.removeItem(STORAGE_KEY)
       return null
     }
-    if (!Array.isArray(data.roles)) {
-      data.roles = []
-    }
     return data
   } catch {
     return null
@@ -34,7 +35,6 @@ function persistAuth(data: AuthResponseDto): StoredAuth {
     userId: data.userId,
     username: data.username,
     email: data.email,
-    roles: data.roles?.filter((r) => typeof r === 'string' && r.length > 0) ?? [],
     accessToken: data.accessToken,
     expiresAtUtc:
       typeof data.expiresAtUtc === 'string' ? data.expiresAtUtc : new Date(data.expiresAtUtc).toISOString(),
@@ -63,16 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(() => {
+    const token = stored?.accessToken ?? null
+    const roles = token ? parseRolesFromAccessToken(token) : []
     const user: AuthUser | null = stored
       ? {
           userId: stored.userId,
           username: stored.username,
           email: stored.email,
-          roles: stored.roles ?? [],
+          roles,
         }
       : null
-    const token = stored?.accessToken ?? null
-    const isAdmin = (user?.roles ?? []).includes('Admin')
+    const isAdmin = roles.includes('Admin')
     return {
       user,
       token,
