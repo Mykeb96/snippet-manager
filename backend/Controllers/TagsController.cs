@@ -64,7 +64,7 @@ public class TagsController : ApiControllerBase
 
     // POST: api/tags
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<TagResponse>> CreateTag(CreateTagRequest request, CancellationToken cancellationToken = default)
     {
@@ -99,7 +99,7 @@ public class TagsController : ApiControllerBase
 
     // PUT: api/tags/5
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     [EnableRateLimiting("WritePolicy")]
     public async Task<ActionResult<TagResponse>> UpdateTag(int id, UpdateTagRequest request, CancellationToken cancellationToken = default)
     {
@@ -140,7 +140,7 @@ public class TagsController : ApiControllerBase
 
     // DELETE: api/tags/5
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Owner")]
     [EnableRateLimiting("WritePolicy")]
     public async Task<IActionResult> DeleteTag(int id, CancellationToken cancellationToken = default)
     {

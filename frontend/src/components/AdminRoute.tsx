@@ -4,7 +4,7 @@ import AdminPage from '../pages/admin/AdminPage'
 
 export default function AdminRoute() {
   const { user } = useAuth()
-  if (!user?.roles.includes('Admin')) {
+  if (!user?.roles.some((r) => r === 'Admin' || r === 'Owner')) {
     return <Navigate to="/" replace />
   }
   return <AdminPage />

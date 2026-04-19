@@ -12,6 +12,8 @@ export type AuthContextValue = {
   token: string | null
   /** True when the JWT includes the Admin role (derived from the access token, not editable storage fields). */
   isAdmin: boolean
+  /** True when the JWT includes the Owner role (only Owners can grant Admin to others). */
+  isOwner: boolean
   ready: boolean
   login: (email: string, password: string) => Promise<void>
   register: (username: string, email: string, password: string) => Promise<void>

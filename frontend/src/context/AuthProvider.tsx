@@ -74,10 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       : null
     const isAdmin = roles.includes('Admin')
+    const isOwner = roles.includes('Owner')
     return {
       user,
       token,
       isAdmin,
+      isOwner,
       ready,
       login,
       register,

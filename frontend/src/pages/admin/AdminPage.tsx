@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   createAdminTag,
   deleteAdminTag,
+  deleteAdminUser,
   fetchAdminTagsPage,
   fetchAdminUsersPage,
+  promoteUserToAdmin,
   updateAdminTag,
   type AdminUserDto,
 } from '../../api/admin'
@@ -12,9 +14,10 @@ import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../context/ToastProvider'
 import { formatTagDisplayName } from '../../utils/formatTagDisplayName'
 import { confirmDeleteTag } from '../../utils/confirmDeleteTag'
+import { confirmDeleteUser } from '../../utils/confirmDeleteUser'
 
 export default function AdminPage() {
-  const { token } = useAuth()
+  const { token, user: currentUser, isOwner } = useAuth()
   const { showToast } = useToast()
 
   const [users, setUsers] = useState<AdminUserDto[]>([])
@@ -33,6 +36,9 @@ export default function AdminPage() {
   const [editName, setEditName] = useState('')
   const [savingTagId, setSavingTagId] = useState<number | null>(null)
   const [deletingTagId, setDeletingTagId] = useState<number | null>(null)
+
+  const [promotingUserId, setPromotingUserId] = useState<number | null>(null)
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null)
 
   const loadUsers = useCallback(
     async (page: number, append: boolean) => {
@@ -145,6 +151,36 @@ export default function AdminPage() {
     }
   }
 
+  async function handlePromoteUser(u: AdminUserDto) {
+    if (!token || u.isAdmin) return
+    setPromotingUserId(u.id)
+    try {
+      await promoteUserToAdmin(u.id, token)
+      setUsers((prev) => prev.map((row) => (row.id === u.id ? { ...row, isAdmin: true } : row)))
+      showToast('User is now an administrator.')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not grant admin.', { variant: 'error' })
+    } finally {
+      setPromotingUserId(null)
+    }
+  }
+
+  async function handleDeleteUser(u: AdminUserDto) {
+    if (!token || currentUser?.userId === u.id) return
+    if (!(await confirmDeleteUser(u.username, u.email))) return
+    setDeletingUserId(u.id)
+    try {
+      await deleteAdminUser(u.id, token)
+      setUsers((prev) => prev.filter((row) => row.id !== u.id))
+      setUsersTotalCount((n) => (n != null ? Math.max(0, n - 1) : n))
+      showToast('User deleted.')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not delete user.', { variant: 'error' })
+    } finally {
+      setDeletingUserId(null)
+    }
+  }
+
   return (
     <div className="admin-page section-anchor">
       <header className="admin-page__header">
@@ -178,16 +214,54 @@ export default function AdminPage() {
                   <th scope="col">ID</th>
                   <th scope="col">Username</th>
                   <th scope="col">Email</th>
+                  <th scope="col">Role</th>
+                  <th scope="col" className="admin-table__actions-head">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.id}</td>
-                    <td>{u.username}</td>
-                    <td>{u.email}</td>
-                  </tr>
-                ))}
+                {users.map((u) => {
+                  const isSelf = currentUser?.userId === u.id
+                  return (
+                    <tr key={u.id}>
+                      <td>{u.id}</td>
+                      <td>{u.username}</td>
+                      <td>{u.email}</td>
+                      <td className="admin-table__roles">
+                        {u.isOwner ? (
+                          <span className="admin-user-role admin-user-role--owner">Owner</span>
+                        ) : u.isAdmin ? (
+                          <span className="admin-user-role">Admin</span>
+                        ) : (
+                          'User'
+                        )}
+                      </td>
+                      <td className="admin-table__actions">
+                        {isOwner && !u.isAdmin && (
+                          <button
+                            type="button"
+                            className="btn btn--ghost btn--sm"
+                            disabled={promotingUserId === u.id || deletingUserId === u.id}
+                            onClick={() => void handlePromoteUser(u)}
+                          >
+                            {promotingUserId === u.id ? '…' : 'Make admin'}
+                          </button>
+                        )}
+                        {!isSelf && (!u.isOwner || isOwner) && (
+                          <button
+                            type="button"
+                            className="btn btn--danger btn--sm"
+                            disabled={deletingUserId === u.id || promotingUserId === u.id}
+                            onClick={() => void handleDeleteUser(u)}
+                          >
+                            {deletingUserId === u.id ? '…' : 'Delete'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -295,3 +295,10 @@ C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\compilecheck\runtime
 C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\compilecheck\runtimes\win-arm64\native\e_sqlite3.dll
 C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\compilecheck\runtimes\win-x64\native\e_sqlite3.dll
 C:\Users\Mykae\OneDrive\Desktop\snippet-manager\backend\obj\compilecheck\runtimes\win-x86\native\e_sqlite3.dll
+C:\Users\Mykae\AppData\Local\Temp\snippet-build-out\appsettings.Development.json
+C:\Users\Mykae\AppData\Local\Temp\snippet-build-out\appsettings.json
+C:\Users\Mykae\AppData\Local\Temp\snippet-build-out\backend.staticwebassets.endpoints.json
+C:\Users\Mykae\AppData\Local\Temp\snippet-build-out\backend.deps.json
+C:\Users\Mykae\AppData\Local\Temp\snippet-build-out\backend.runtimeconfig.json
+C:\Users\Mykae\AppData\Local\Temp\snippet-build-out\backend.dll
+C:\Users\Mykae\AppData\Local\Temp\snippet-build-out\backend.pdb

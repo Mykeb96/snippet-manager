@@ -538,6 +538,36 @@ a.avatar-btn {
   border-bottom: none;
 }
 
+.admin-table__actions-head,
+.admin-table__actions {
+  text-align: right;
+  vertical-align: middle;
+}
+
+.admin-table__actions {
+  white-space: nowrap;
+}
+
+.admin-table__actions .btn + .btn {
+  margin-left: 0.35rem;
+}
+
+.admin-table__roles {
+  white-space: normal;
+}
+
+.admin-user-role {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.admin-user-role--owner {
+  color: #c4b5fd;
+}
+
 .admin-tag-create {
   display: flex;
   flex-wrap: wrap;

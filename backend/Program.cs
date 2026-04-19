@@ -249,9 +249,15 @@ static async Task SeedDevelopmentDataAsync(WebApplication app)
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
     const string adminRole = "Admin";
+    const string ownerRole = "Owner";
     if (!await roleManager.RoleExistsAsync(adminRole))
     {
         await roleManager.CreateAsync(new IdentityRole<int>(adminRole));
+    }
+
+    if (!await roleManager.RoleExistsAsync(ownerRole))
+    {
+        await roleManager.CreateAsync(new IdentityRole<int>(ownerRole));
     }
 
     var adminEmail = "admin@snippet.local";
@@ -316,6 +322,11 @@ static async Task SeedDevelopmentDataAsync(WebApplication app)
     if (!await userManager.IsInRoleAsync(adminUser, adminRole))
     {
         await userManager.AddToRoleAsync(adminUser, adminRole);
+    }
+
+    if (!await userManager.IsInRoleAsync(adminUser, ownerRole))
+    {
+        await userManager.AddToRoleAsync(adminUser, ownerRole);
     }
 }
 

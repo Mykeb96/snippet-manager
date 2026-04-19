@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using backend;
 using backend.Data;
+using backend.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -391,7 +393,95 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
         _ = Assert.Single(total);
     }
 
+    [Fact]
+    public async Task PromoteToAdmin_AsAdmin_Returns204_GetUsersShowsIsAdmin()
+    {
+        await RegisterAndLoginAsync("promote", "promote-user@test.local", "PromoteUserPass1!");
+        var victimAuth = await LoginGetAuthAsync("promote-user@test.local", "PromoteUserPass1!");
+
+        var adminToken = await LoginAdminAsync();
+        var promote = new HttpRequestMessage(HttpMethod.Post, $"/api/users/{victimAuth.UserId}/admin");
+        promote.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var promoteRes = await _client.SendAsync(promote);
+        Assert.Equal(HttpStatusCode.NoContent, promoteRes.StatusCode);
+
+        var getUsers = new HttpRequestMessage(HttpMethod.Get, "/api/users?page=1&pageSize=100");
+        getUsers.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var listRes = await _client.SendAsync(getUsers);
+        listRes.EnsureSuccessStatusCode();
+        var users = await DeserializeAsync<List<UserListItemDto>>(listRes);
+        var row = users.FirstOrDefault(u => u.Id == victimAuth.UserId);
+        Assert.NotNull(row);
+        Assert.True(row!.IsAdmin);
+    }
+
+    [Fact]
+    public async Task PromoteToAdmin_AsAdminWithoutOwner_Returns403()
+    {
+        await RegisterAndLoginAsync("admonly", "adm-only@test.local", "AdmOnlypassWord1!");
+        var promoterAuth = await LoginGetAuthAsync("adm-only@test.local", "AdmOnlypassWord1!");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var u = await userManager.FindByIdAsync(promoterAuth.UserId.ToString());
+            Assert.NotNull(u);
+            await userManager.AddToRoleAsync(u!, "Admin");
+        }
+
+        await RegisterAndLoginAsync("vic", "victim-promo@test.local", "VictimPromoPassWord1!");
+        var victimAuth = await LoginGetAuthAsync("victim-promo@test.local", "VictimPromoPassWord1!");
+
+        var promote = new HttpRequestMessage(HttpMethod.Post, $"/api/users/{victimAuth.UserId}/admin");
+        promote.Headers.Authorization = new AuthenticationHeaderValue("Bearer", promoterAuth.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, (await _client.SendAsync(promote)).StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteUser_AsNonAdmin_Returns403()
+    {
+        var userToken = await RegisterAndLoginAsync("nodel", "nodel@test.local", "NoDelPassWord1!");
+        var other = await RegisterAndLoginAsync("victim", "victim-del@test.local", "VictimDelPass1!");
+        var otherAuth = await LoginGetAuthAsync("victim-del@test.local", "VictimDelPass1!");
+
+        var del = new HttpRequestMessage(HttpMethod.Delete, $"/api/users/{otherAuth.UserId}");
+        del.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+        Assert.Equal(HttpStatusCode.Forbidden, (await _client.SendAsync(del)).StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteUser_AsAdmin_OtherUser_Returns204()
+    {
+        await RegisterAndLoginAsync("gone", "gone-user@test.local", "GoneUserPassWord1!");
+        var goneAuth = await LoginGetAuthAsync("gone-user@test.local", "GoneUserPassWord1!");
+        var adminToken = await LoginAdminAsync();
+
+        var del = new HttpRequestMessage(HttpMethod.Delete, $"/api/users/{goneAuth.UserId}");
+        del.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var res = await _client.SendAsync(del);
+        Assert.Equal(HttpStatusCode.NoContent, res.StatusCode);
+
+        var get = new HttpRequestMessage(HttpMethod.Get, $"/api/users/{goneAuth.UserId}");
+        get.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        Assert.Equal(HttpStatusCode.NotFound, (await _client.SendAsync(get)).StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteUser_AsSelf_Returns409()
+    {
+        var auth = await LoginAdminResponseAsync();
+        var del = new HttpRequestMessage(HttpMethod.Delete, $"/api/users/{auth.UserId}");
+        del.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+        var res = await _client.SendAsync(del);
+        Assert.Equal(HttpStatusCode.Conflict, res.StatusCode);
+    }
+
     private async Task<string> LoginAdminAsync()
+    {
+        var auth = await LoginAdminResponseAsync();
+        return auth.AccessToken;
+    }
+
+    private async Task<AuthResponseDto> LoginAdminResponseAsync()
     {
         var body = JsonSerializer.Serialize(new
         {
@@ -404,8 +494,17 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
             new StringContent(body, Encoding.UTF8, "application/json"));
 
         response.EnsureSuccessStatusCode();
-        var auth = await DeserializeAsync<AuthResponseDto>(response);
-        return auth.AccessToken;
+        return await DeserializeAsync<AuthResponseDto>(response);
+    }
+
+    private async Task<AuthResponseDto> LoginGetAuthAsync(string email, string password)
+    {
+        var body = JsonSerializer.Serialize(new { email, password }, JsonOptions);
+        var response = await _client.PostAsync(
+            "/api/auth/login",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+        response.EnsureSuccessStatusCode();
+        return await DeserializeAsync<AuthResponseDto>(response);
     }
 
     private async Task<string> RegisterAndLoginAsync(string username, string email, string password)
@@ -463,6 +562,8 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     private sealed record SnippetResponseDto(int Id);
 
     private sealed record TagResponseDto(int Id, string Name);
+
+    private sealed record UserListItemDto(int Id, string Username, string Email, bool IsAdmin, bool IsOwner);
 
     private sealed record SnippetWithTagsDto(int Id, List<TagResponseDto> Tags);
 

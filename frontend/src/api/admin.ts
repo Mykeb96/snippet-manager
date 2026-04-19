@@ -3,10 +3,26 @@ import type { TagDto } from './snippets'
 
 const PAGE_SIZE = 50
 
+function normalizeAdminUsers(raw: unknown): AdminUserDto[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((row) => {
+    const o = row as Record<string, unknown>
+    return {
+      id: Number(o.id),
+      username: String(o.username ?? ''),
+      email: String(o.email ?? ''),
+      isAdmin: Boolean(o.isAdmin ?? o.IsAdmin),
+      isOwner: Boolean(o.isOwner ?? o.IsOwner),
+    }
+  })
+}
+
 export type AdminUserDto = {
   id: number
   username: string
   email: string
+  isAdmin: boolean
+  isOwner: boolean
 }
 
 export type FetchAdminUsersResult = {
@@ -35,7 +51,8 @@ export async function fetchAdminUsersPage(
     throw new Error(text || `Failed to load users (${res.status})`)
   }
 
-  const items = (await res.json()) as AdminUserDto[]
+  const raw = (await res.json()) as unknown
+  const items = normalizeAdminUsers(raw)
   const totalHeader = res.headers.get('X-Total-Count')
   const pageHeader = res.headers.get('X-Page')
   const sizeHeader = res.headers.get('X-Page-Size')
@@ -148,5 +165,29 @@ export async function deleteAdminTag(id: number, accessToken: string): Promise<v
   if (!res.ok && res.status !== 404) {
     const text = await res.text().catch(() => '')
     throw new Error(text || `Could not delete tag (${res.status})`)
+  }
+}
+
+export async function promoteUserToAdmin(userId: number, accessToken: string): Promise<void> {
+  const base = getApiBaseUrl()
+  const res = await fetch(`${base}/api/users/${userId}/admin`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || `Could not grant admin (${res.status})`)
+  }
+}
+
+export async function deleteAdminUser(userId: number, accessToken: string): Promise<void> {
+  const base = getApiBaseUrl()
+  const res = await fetch(`${base}/api/users/${userId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || `Could not delete user (${res.status})`)
   }
 }
