@@ -46,7 +46,9 @@ builder.Services
         options.User.RequireUniqueEmail = true;
     })
     .AddRoles<IdentityRole<int>>()
-    .AddEntityFrameworkStores<AppDbContext>();
+    .AddEntityFrameworkStores<AppDbContext>()
+    // Required for GeneratePasswordResetTokenAsync / email confirmation tokens if you use them.
+    .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton(jwtSettings);
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
@@ -252,9 +254,9 @@ static async Task SeedDevelopmentDataAsync(WebApplication app)
         await roleManager.CreateAsync(new IdentityRole<int>(adminRole));
     }
 
-    var adminEmail = configuration["AdminSeed:Email"] ?? "admin@snippet.local";
-    var adminUsername = configuration["AdminSeed:Username"] ?? "admin";
-    var adminPassword = configuration["AdminSeed:Password"];
+    var adminEmail = "admin@snippet.local";
+    var adminUsername = "admin";
+    var adminPassword = "MyAdmin1";
 
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser is null)
@@ -277,6 +279,37 @@ static async Task SeedDevelopmentDataAsync(WebApplication app)
         {
             var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
             throw new InvalidOperationException($"Failed to seed development admin user: {errors}");
+        }
+    }
+    else if (!string.IsNullOrWhiteSpace(adminPassword))
+    {
+        // User already exists: CreateAsync was skipped, so appsettings password was never applied.
+        // RemovePasswordAsync + AddPasswordAsync can fail on some stores or leave the account with
+        // no password if remove succeeds but add does not. Hash + UpdateAsync always persists a
+        // password the PasswordHasher can verify (same path CheckPasswordAsync uses).
+        foreach (var validator in userManager.PasswordValidators)
+        {
+            var vr = await validator.ValidateAsync(userManager, adminUser, adminPassword);
+            if (!vr.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"AdminSeed:Password does not meet policy: {string.Join("; ", vr.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        adminUser.PasswordHash = userManager.PasswordHasher.HashPassword(adminUser, adminPassword);
+        var updateResult = await userManager.UpdateAsync(adminUser);
+        if (!updateResult.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"AdminSeed: could not save password hash: {string.Join("; ", updateResult.Errors.Select(e => e.Description))}");
+        }
+
+        var stampResult = await userManager.UpdateSecurityStampAsync(adminUser);
+        if (!stampResult.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"AdminSeed: could not refresh security stamp: {string.Join("; ", stampResult.Errors.Select(e => e.Description))}");
         }
     }
 

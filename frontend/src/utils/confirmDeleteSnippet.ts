@@ -16,6 +16,7 @@ export async function confirmDeleteSnippet(snippetTitle: string): Promise<boolea
   const result = await Swal.fire({
     title: 'Delete this snippet?',
     text,
+    icon: 'warning',
     showCancelButton: true,
     showCloseButton: true,
     confirmButtonText: 'Delete',

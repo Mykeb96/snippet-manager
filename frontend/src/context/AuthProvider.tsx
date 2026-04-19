@@ -20,6 +20,9 @@ function readStoredAuth(): StoredAuth | null {
       localStorage.removeItem(STORAGE_KEY)
       return null
     }
+    if (!Array.isArray(data.roles)) {
+      data.roles = []
+    }
     return data
   } catch {
     return null
@@ -31,6 +34,7 @@ function persistAuth(data: AuthResponseDto): StoredAuth {
     userId: data.userId,
     username: data.username,
     email: data.email,
+    roles: data.roles?.filter((r) => typeof r === 'string' && r.length > 0) ?? [],
     accessToken: data.accessToken,
     expiresAtUtc:
       typeof data.expiresAtUtc === 'string' ? data.expiresAtUtc : new Date(data.expiresAtUtc).toISOString(),
@@ -60,12 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => {
     const user: AuthUser | null = stored
-      ? { userId: stored.userId, username: stored.username, email: stored.email }
+      ? {
+          userId: stored.userId,
+          username: stored.username,
+          email: stored.email,
+          roles: stored.roles ?? [],
+        }
       : null
     const token = stored?.accessToken ?? null
+    const isAdmin = (user?.roles ?? []).includes('Admin')
     return {
       user,
       token,
+      isAdmin,
       ready,
       login,
       register,

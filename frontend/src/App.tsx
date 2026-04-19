@@ -9,6 +9,7 @@ import ProfileLayout from './pages/profile/ProfileLayout'
 import MySnippetsPage from './pages/profile/MySnippetsPage'
 import FavoritesPage from './pages/profile/FavoritesPage'
 import SettingsPage from './pages/profile/SettingsPage'
+import AdminRoute from './components/AdminRoute'
 import './App.css'
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="contact" element={<ContactPage />} />
         <Route path="auth" element={<AuthPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="admin" element={<AdminRoute />} />
           <Route path="profile" element={<ProfileLayout />}>
             <Route index element={<Navigate to="my-snippets" replace />} />
             <Route path="my-snippets" element={<MySnippetsPage />} />

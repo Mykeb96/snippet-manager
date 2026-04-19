@@ -6,6 +6,8 @@ export type AuthResponseDto = {
   email: string
   accessToken: string
   expiresAtUtc: string
+  /** Present from API when user has Identity roles (e.g. Admin). */
+  roles?: string[]
 }
 
 async function parseError(res: Response): Promise<string> {

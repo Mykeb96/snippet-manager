@@ -10,7 +10,7 @@ function avatarClassName(isActive: boolean) {
 }
 
 export default function AppLayout() {
-  const { user, logout } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   function handleSignOut() {
@@ -44,6 +44,11 @@ export default function AppLayout() {
             <NavLink to="/contact" className={({ isActive }) => navClassName(isActive)}>
               Contact
             </NavLink>
+            {isAdmin && (
+              <NavLink to="/admin" className={({ isActive }) => navClassName(isActive)}>
+                Admin
+              </NavLink>
+            )}
           </nav>
 
           {user ? (

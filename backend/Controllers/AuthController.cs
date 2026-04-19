@@ -26,7 +26,13 @@ public class AuthController : ApiControllerBase
 
     public record RegisterRequest(string Username, string Email, string Password);
     public record LoginRequest(string Email, string Password);
-    public record AuthResponse(int UserId, string Username, string Email, string AccessToken, DateTime ExpiresAtUtc);
+    public record AuthResponse(
+        int UserId,
+        string Username,
+        string Email,
+        string AccessToken,
+        DateTime ExpiresAtUtc,
+        IReadOnlyList<string> Roles);
 
     public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
@@ -166,7 +172,8 @@ public class AuthController : ApiControllerBase
             user.UserName ?? string.Empty,
             user.Email ?? string.Empty,
             accessToken,
-            expires);
+            expires,
+            roles.ToList());
     }
 }
 

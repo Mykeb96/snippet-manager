@@ -29,6 +29,7 @@ const TAG_LABELS: Record<string, string> = {
   deno: 'Deno',
   express: 'Express',
   nestjs: 'NestJS',
+  'nest.js': 'Nest.js',
   fastify: 'Fastify',
   hono: 'Hono',
   trpc: 'tRPC',
@@ -79,10 +80,63 @@ const TAG_LABELS: Record<string, string> = {
   security: 'Security',
 }
 
+/** Lowercase segments after a dot (file extensions, common tech suffixes) — avoids "Nest.Js" for "nest.js". */
+const LOWERCASE_AFTER_DOT = new Set([
+  'js',
+  'mjs',
+  'cjs',
+  'ts',
+  'tsx',
+  'jsx',
+  'css',
+  'scss',
+  'sass',
+  'less',
+  'html',
+  'md',
+  'json',
+  'yml',
+  'yaml',
+  'sh',
+  'sql',
+  'wasm',
+  'map',
+  'lock',
+  'net',
+  'io',
+  'ai',
+  'ui',
+  'ux',
+  'api',
+  'sdk',
+  'cs',
+  'fs',
+  'vb',
+  'gql',
+  'graphql',
+  'd',
+  'config',
+])
+
+function formatUnknownSlug(slug: string): string {
+  return slug
+    .replace(/-/g, ' ')
+    .split(' ')
+    .map((word) =>
+      word
+        .split('.')
+        .map((segment, index) => {
+          if (segment.length === 0) return segment
+          if (index > 0 && LOWERCASE_AFTER_DOT.has(segment)) return segment
+          return segment[0].toUpperCase() + segment.slice(1)
+        })
+        .join('.'),
+    )
+    .join(' ')
+}
+
 export function formatTagDisplayName(slug: string): string {
   const known = TAG_LABELS[slug.toLowerCase()]
   if (known) return known
-  return slug
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  return formatUnknownSlug(slug)
 }

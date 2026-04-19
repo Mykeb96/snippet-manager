@@ -20,6 +20,7 @@ public class TagsController : ApiControllerBase
     }
 
     public record CreateTagRequest(string Name);
+    public record UpdateTagRequest(string Name);
     // GET: api/tags
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TagResponse>>> GetTags([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
@@ -96,6 +97,47 @@ public class TagsController : ApiControllerBase
         return CreatedAtAction(nameof(GetTag), new { id = tag.Id }, response);
     }
 
+    // PUT: api/tags/5
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    [EnableRateLimiting("WritePolicy")]
+    public async Task<ActionResult<TagResponse>> UpdateTag(int id, UpdateTagRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest("Name is required.");
+        }
+
+        var normalizedName = request.Name.Trim().ToLowerInvariant();
+
+        var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        if (tag is null)
+        {
+            return NotFound();
+        }
+
+        if (tag.Name != normalizedName)
+        {
+            var duplicateTag = await _context.Tags.AsNoTracking().FirstOrDefaultAsync(t => t.Name == normalizedName && t.Id != id, cancellationToken);
+            if (duplicateTag is not null)
+            {
+                return Conflict("A tag with the same name already exists.");
+            }
+
+            tag.Name = normalizedName;
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                return Conflict("A tag with the same name already exists.");
+            }
+        }
+
+        return new TagResponse(tag.Id, tag.Name);
+    }
+
     // DELETE: api/tags/5
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
@@ -109,12 +151,11 @@ public class TagsController : ApiControllerBase
             return NotFound();
         }
 
-        // Tags are global/shared metadata managed by admins.
-        // Deletion is blocked while a tag is still referenced by snippets.
-        var inUse = await _context.SnippetTags.AnyAsync(st => st.TagId == id, cancellationToken);
-        if (inUse)
+        // Remove join rows first so snippets no longer reference this tag, then delete the tag.
+        var links = await _context.SnippetTags.Where(st => st.TagId == id).ToListAsync(cancellationToken);
+        if (links.Count > 0)
         {
-            return Conflict("Cannot delete a tag that is currently assigned to snippets.");
+            _context.SnippetTags.RemoveRange(links);
         }
 
         _context.Tags.Remove(tag);

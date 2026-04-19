@@ -434,7 +434,13 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
         return result;
     }
 
-    private sealed record AuthResponseDto(int UserId, string Username, string Email, string AccessToken, DateTime ExpiresAtUtc);
+    private sealed record AuthResponseDto(
+        int UserId,
+        string Username,
+        string Email,
+        string AccessToken,
+        DateTime ExpiresAtUtc,
+        IReadOnlyList<string>? Roles = null);
 
     private sealed record SnippetResponseDto(int Id);
 
