@@ -224,6 +224,27 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     }
 
     [Fact]
+    public async Task GetSnippetsMe_ReturnsOnlyCurrentUserSnippets()
+    {
+        var userA = await RegisterAndLoginAsync("mineA", "mine-a@test.local", "MineApassword1!");
+        var userB = await RegisterAndLoginAsync("mineB", "mine-b@test.local", "MineBpassword1!");
+
+        await CreateSnippetAsync(userA, "From A", "a", "csharp");
+        await CreateSnippetAsync(userB, "From B", "b", "csharp");
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/snippets/me?page=1&pageSize=20");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userA);
+
+        var response = await _client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var snippets = await DeserializeAsync<List<SnippetMineDto>>(response);
+        Assert.All(snippets, s => Assert.Equal("mineA", s.User.Username));
+        Assert.Contains(snippets, s => s.Title == "From A");
+        Assert.DoesNotContain(snippets, s => s.Title == "From B");
+    }
+
+    [Fact]
     public async Task GetTags_PaginationHeaders_AreSet()
     {
         var response = await _client.GetAsync("/api/tags?page=2&pageSize=5");
@@ -305,4 +326,8 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     private sealed record TagResponseDto(int Id, string Name);
 
     private sealed record SnippetWithTagsDto(int Id, List<TagResponseDto> Tags);
+
+    private sealed record SnippetMineDto(string Title, UserSummaryDto User);
+
+    private sealed record UserSummaryDto(string Username);
 }

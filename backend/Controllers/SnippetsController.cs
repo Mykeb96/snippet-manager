@@ -31,38 +31,31 @@ public class SnippetsController : ApiControllerBase
         IReadOnlyList<TagResponse> Tags
     );
 
-    // GET: api/snippets
+    // GET: api/snippets?userId= (optional) filter by author (public; do not use alone for “my snippets” in the app)
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippets([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippets(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] int? userId = null,
+        CancellationToken cancellationToken = default)
     {
-        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        return await GetSnippetsPageAsync(page, pageSize, userId, cancellationToken);
+    }
+
+    // GET: api/snippets/me — snippets for the authenticated user (JWT). Preferred for Profile → My snippets.
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<SnippetResponse>>> GetMySnippets(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        if (RequireCurrentUserId(out var currentUserId) is ActionResult authError)
         {
-            return pagingError;
+            return authError;
         }
 
-        var totalCount = await _context.Snippets.AsNoTracking().CountAsync(cancellationToken);
-        WritePaginationHeaders(totalCount, page, pageSize);
-
-        return await _context.Snippets
-            .AsNoTracking()
-            .OrderByDescending(s => s.CreatedAt)
-            .Skip(skip)
-            .Take(take)
-            // Identity fields are nullable at the schema level; API DTOs keep a non-null string contract.
-            .Select(s => new SnippetResponse(
-                s.Id,
-                s.Title,
-                s.Code,
-                s.Language,
-                s.CreatedAt,
-                s.UserId,
-                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty),
-                s.SnippetTags
-                    .OrderBy(st => st.Tag.Name)
-                    .Select(st => new TagResponse(st.Tag.Id, st.Tag.Name))
-                    .ToList()
-            ))
-            .ToListAsync(cancellationToken);
+        return await GetSnippetsPageAsync(page, pageSize, currentUserId, cancellationToken);
     }
 
     // GET: api/snippets/5
@@ -193,5 +186,45 @@ public class SnippetsController : ApiControllerBase
         await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();
+    }
+
+    private async Task<ActionResult<IEnumerable<SnippetResponse>>> GetSnippetsPageAsync(
+        int page,
+        int pageSize,
+        int? filterByUserId,
+        CancellationToken cancellationToken)
+    {
+        if (ValidateAndNormalizePagination(page, pageSize, out var skip, out var take) is ActionResult pagingError)
+        {
+            return pagingError;
+        }
+
+        var query = _context.Snippets.AsNoTracking();
+        if (filterByUserId is > 0)
+        {
+            query = query.Where(s => s.UserId == filterByUserId.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        WritePaginationHeaders(totalCount, page, pageSize);
+
+        return await query
+            .OrderByDescending(s => s.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .Select(s => new SnippetResponse(
+                s.Id,
+                s.Title,
+                s.Code,
+                s.Language,
+                s.CreatedAt,
+                s.UserId,
+                new UserSummaryResponse(s.User.Id, s.User.UserName ?? string.Empty),
+                s.SnippetTags
+                    .OrderBy(st => st.Tag.Name)
+                    .Select(st => new TagResponse(st.Tag.Id, st.Tag.Name))
+                    .ToList()
+            ))
+            .ToListAsync(cancellationToken);
     }
 }

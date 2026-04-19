@@ -2,9 +2,11 @@
 
 import { fetchMockSnippetsPage } from '../data/mockSnippets'
 
-/** Set `VITE_USE_SNIPPET_API=true` when the backend is running; otherwise the mock pool is used. */
+/**
+ * Real API is the default so posts persist. Set `VITE_USE_MOCK_FEED=true` for an offline mock feed (no DB).
+ */
 export function isRealSnippetApiEnabled(): boolean {
-  return import.meta.env.VITE_USE_SNIPPET_API === 'true'
+  return import.meta.env.VITE_USE_MOCK_FEED !== 'true'
 }
 
 export type SnippetUserDto = {
@@ -44,12 +46,30 @@ export type FetchSnippetsPageResult = {
   hasMore: boolean
 }
 
+export type FetchSnippetsOptions = {
+  /** When set, GET /api/snippets?userId=… (e.g. profile “my snippets”). */
+  userId?: number
+}
+
 /**
  * Fetches one page of snippets. Uses X-Total-Count / X-Page / X-Page-Size when exposed by CORS;
  * otherwise infers hasMore from whether the page is full.
  */
-export async function fetchSnippetsPage(page: number, pageSize = PAGE_SIZE): Promise<FetchSnippetsPageResult> {
+export async function fetchSnippetsPage(
+  page: number,
+  pageSize = PAGE_SIZE,
+  options?: FetchSnippetsOptions,
+): Promise<FetchSnippetsPageResult> {
   if (!isRealSnippetApiEnabled()) {
+    if (options?.userId != null) {
+      return {
+        items: [],
+        page,
+        pageSize,
+        totalCount: 0,
+        hasMore: false,
+      }
+    }
     return fetchMockSnippetsPage(page, pageSize)
   }
 
@@ -57,11 +77,72 @@ export async function fetchSnippetsPage(page: number, pageSize = PAGE_SIZE): Pro
   const url = new URL(`${base}/api/snippets`)
   url.searchParams.set('page', String(page))
   url.searchParams.set('pageSize', String(pageSize))
+  if (options?.userId != null && options.userId > 0) {
+    url.searchParams.set('userId', String(options.userId))
+  }
 
   const res = await fetch(url.toString())
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     throw new Error(text || `Failed to load snippets (${res.status})`)
+  }
+
+  const items = (await res.json()) as SnippetDto[]
+  const totalHeader = res.headers.get('X-Total-Count')
+  const pageHeader = res.headers.get('X-Page')
+  const sizeHeader = res.headers.get('X-Page-Size')
+
+  const totalCount = totalHeader != null ? Number.parseInt(totalHeader, 10) : NaN
+  const pageNum = pageHeader != null ? Number.parseInt(pageHeader, 10) : page
+  const sizeNum = sizeHeader != null ? Number.parseInt(sizeHeader, 10) : pageSize
+
+  let hasMore: boolean
+  if (Number.isFinite(totalCount) && totalCount >= 0) {
+    hasMore = pageNum * sizeNum < totalCount
+  } else {
+    hasMore = items.length === pageSize
+  }
+
+  return {
+    items,
+    page: pageNum,
+    pageSize: sizeNum,
+    totalCount: Number.isFinite(totalCount) ? totalCount : items.length,
+    hasMore,
+  }
+}
+
+/**
+ * Snippets for the signed-in user (GET /api/snippets/me). Uses the JWT; does not rely on client-stored userId.
+ */
+export async function fetchMySnippetsPage(
+  page: number,
+  pageSize = PAGE_SIZE,
+  accessToken: string,
+): Promise<FetchSnippetsPageResult> {
+  if (!isRealSnippetApiEnabled()) {
+    return {
+      items: [],
+      page,
+      pageSize,
+      totalCount: 0,
+      hasMore: false,
+    }
+  }
+
+  const base = getApiBaseUrl()
+  const url = new URL(`${base}/api/snippets/me`)
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', String(pageSize))
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || `Failed to load your snippets (${res.status})`)
   }
 
   const items = (await res.json()) as SnippetDto[]

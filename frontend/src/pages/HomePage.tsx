@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../hooks/useAuth'
 import { formatFeedTime } from '../utils/formatFeedTime'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
+import { SnippetCopyButton } from '../components/SnippetCopyButton'
 
 export default function HomePage() {
   const { user, token } = useAuth()
@@ -290,6 +291,13 @@ export default function HomePage() {
             <span className="compose__avatar-inner">{user.username.slice(0, 1).toUpperCase()}</span>
           </div>
           <div className="compose__fields">
+            {!isRealSnippetApiEnabled() && (
+              <p className="compose__demo-notice">
+                Demo feed: posts stay in this browser session only. Unset{' '}
+                <code className="compose__demo-code">VITE_USE_MOCK_FEED</code> and run the API to save snippets to the
+                database.
+              </p>
+            )}
             {composeError && (
               <div className="compose__error" role="alert">
                 {composeError}
@@ -439,24 +447,27 @@ export default function HomePage() {
                         </time>
                       </header>
                     </div>
-                    <button
-                      type="button"
-                      className={[
-                        'snippet-card__fav',
-                        favorited ? 'snippet-card__fav--on' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      disabled={!canToggleFav || favoritingId === s.id}
-                      aria-pressed={favorited}
-                      aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
-                      title={!user ? 'Sign in to save favorites' : favorited ? 'Remove favorite' : 'Favorite'}
-                      onClick={() => void toggleFavorite(s.id)}
-                    >
-                      <span className="snippet-card__fav-icon" aria-hidden="true">
-                        {favorited ? '♥' : '♡'}
-                      </span>
-                    </button>
+                    <div className="snippet-card__actions">
+                      <SnippetCopyButton code={s.code} />
+                      <button
+                        type="button"
+                        className={[
+                          'snippet-card__fav',
+                          favorited ? 'snippet-card__fav--on' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        disabled={!canToggleFav || favoritingId === s.id}
+                        aria-pressed={favorited}
+                        aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
+                        title={!user ? 'Sign in to save favorites' : favorited ? 'Remove favorite' : 'Favorite'}
+                        onClick={() => void toggleFavorite(s.id)}
+                      >
+                        <span className="snippet-card__fav-icon" aria-hidden="true">
+                          {favorited ? '♥' : '♡'}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                   <h3 className="snippet-card__title">{s.title}</h3>
                   <pre className="snippet-card__code-wrap">
