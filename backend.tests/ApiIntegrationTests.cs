@@ -176,6 +176,40 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     }
 
     [Fact]
+    public async Task GetFavoritesMe_ReturnsFavorite_IncludesSnippetAuthor_DeleteMe_Removes()
+    {
+        var fan = await RegisterAndLoginAsync("fanme", "fan-me@test.local", "FanmePassword1!");
+        var author = await RegisterAndLoginAsync("authorf", "author-f@test.local", "AuthorfPassword1!");
+        var snippetId = await CreateSnippetAsync(author, "Starred", "code", "typescript");
+
+        var body = JsonSerializer.Serialize(new { snippetId }, JsonOptions);
+        var post = new HttpRequestMessage(HttpMethod.Post, "/api/favorites")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json"),
+        };
+        post.Headers.Authorization = new AuthenticationHeaderValue("Bearer", fan);
+        (await _client.SendAsync(post)).EnsureSuccessStatusCode();
+
+        var get = new HttpRequestMessage(HttpMethod.Get, "/api/favorites/me?page=1&pageSize=20");
+        get.Headers.Authorization = new AuthenticationHeaderValue("Bearer", fan);
+        var listResponse = await _client.SendAsync(get);
+        listResponse.EnsureSuccessStatusCode();
+        var list = await DeserializeAsync<List<FavoriteMeListDto>>(listResponse);
+        Assert.Single(list);
+        Assert.Equal(snippetId, list[0].SnippetId);
+        Assert.Equal("authorf", list[0].Snippet.Author.Username);
+
+        var del = new HttpRequestMessage(HttpMethod.Delete, $"/api/favorites/me/snippet/{snippetId}");
+        del.Headers.Authorization = new AuthenticationHeaderValue("Bearer", fan);
+        Assert.Equal(HttpStatusCode.NoContent, (await _client.SendAsync(del)).StatusCode);
+
+        var empty = await _client.SendAsync(get);
+        empty.EnsureSuccessStatusCode();
+        var after = await DeserializeAsync<List<FavoriteMeListDto>>(empty);
+        Assert.Empty(after);
+    }
+
+    [Fact]
     public async Task PostSnippet_WithValidTagIds_ReturnsSnippetWithTags()
     {
         var token = await RegisterAndLoginAsync("tagged", "tagged@test.local", "Taggedpassword1!");
@@ -330,4 +364,10 @@ public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory
     private sealed record SnippetMineDto(string Title, UserSummaryDto User);
 
     private sealed record UserSummaryDto(string Username);
+
+    private sealed record FavoriteMeListDto(int SnippetId, FavoriteSnippetPartDto Snippet);
+
+    private sealed record FavoriteSnippetPartDto(FavoriteAuthorDto Author);
+
+    private sealed record FavoriteAuthorDto(string Username);
 }

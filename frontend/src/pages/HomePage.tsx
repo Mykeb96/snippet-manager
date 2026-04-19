@@ -10,18 +10,21 @@ import {
 } from '../api/snippets'
 import { fetchTagsForCompose } from '../api/tags'
 import {
-  fetchFavoriteSnippetIdsForUser,
+  fetchMyFavoriteSnippetIds,
   addFavorite,
   removeFavorite,
   saveMockFavoriteIds,
+  loadMockFavoriteIds,
 } from '../api/favorites'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../context/ToastProvider'
 import { formatFeedTime } from '../utils/formatFeedTime'
 import { formatTagDisplayName } from '../utils/formatTagDisplayName'
 import { SnippetCopyButton } from '../components/SnippetCopyButton'
 
 export default function HomePage() {
   const { user, token } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -71,13 +74,25 @@ export default function HomePage() {
     }
     let cancelled = false
     void (async () => {
-      const ids = await fetchFavoriteSnippetIdsForUser(user.userId)
-      if (!cancelled) setFavoritedIds(ids)
+      try {
+        if (!isRealSnippetApiEnabled()) {
+          if (!cancelled) setFavoritedIds(loadMockFavoriteIds())
+          return
+        }
+        if (!token) {
+          if (!cancelled) setFavoritedIds(new Set())
+          return
+        }
+        const ids = await fetchMyFavoriteSnippetIds(token)
+        if (!cancelled) setFavoritedIds(ids)
+      } catch {
+        if (!cancelled) setFavoritedIds(new Set())
+      }
     })()
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [user, token])
 
   useEffect(() => {
     let cancelled = false
@@ -213,7 +228,7 @@ export default function HomePage() {
     setFavoritingId(snippetId)
     try {
       if (isFav) {
-        await removeFavorite(user.userId, snippetId, token)
+        await removeFavorite(snippetId, token)
       } else {
         await addFavorite(snippetId, token)
       }
@@ -259,6 +274,7 @@ export default function HomePage() {
         setTitle('')
         setCode('')
         setSelectedTagIds([])
+        showToast('Snippet posted successfully.')
       } catch (err) {
         setComposeError(err instanceof Error ? err.message : 'Could not post snippet.')
       }
@@ -279,6 +295,7 @@ export default function HomePage() {
     setTitle('')
     setCode('')
     setSelectedTagIds([])
+    showToast('Snippet posted (demo session — not saved on the server).', { durationMs: 4800 })
   }
 
   const canPost = title.trim().length > 0 && code.trim().length > 0
