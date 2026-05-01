@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+.git/
+.gitignore
+app.db
+app.db-shm
+app.db-wal
