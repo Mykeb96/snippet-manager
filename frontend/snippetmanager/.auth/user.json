@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "snippet-manager.auth",
+          "value": "{\"userId\":14,\"username\":\"admin\",\"email\":\"admin@snippet.local\",\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxNCIsImVtYWlsIjoiYWRtaW5Ac25pcHBldC5sb2NhbCIsInVuaXF1ZV9uYW1lIjoiYWRtaW4iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjE0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6ImFkbWluIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjpbIkFkbWluIiwiT3duZXIiXSwiZXhwIjoxNzc4MjI2NjQxLCJpc3MiOiJzbmlwcGV0LW1hbmFnZXItYXBpIiwiYXVkIjoic25pcHBldC1tYW5hZ2VyLWNsaWVudCJ9.F739noLKHNWV5TVdFUgu0IWRL8V2iT0q3QcDSUT1Ou8\",\"expiresAtUtc\":\"2026-05-08T07:50:41.0253306Z\"}"
+        }
+      ]
+    }
+  ]
+}
