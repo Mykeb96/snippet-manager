@@ -1,40 +1,21 @@
 import { test, expect } from '@playwright/test'
 import { Page } from '@playwright/test'
 
+import { 
+  makeUniqueUser, 
+  fillEmail, 
+  fillPassword, 
+  fillUsername, 
+  clickRegister, 
+  clickSignIn 
+} from './helpers/auth-helpers'
+
 const BASE_URL = 'http://localhost:5173'
 
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/auth`)
   })
-
-  function makeUniqueUser() {
-    const id = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-    return {
-      username: `user${id}`,
-      email: `user${id}@test.com`,
-    };
-  }
-
-  async function fillEmail(email: string, page: Page) {
-    await page.getByRole('textbox', { name: 'Email' }).fill(email);
-  }
-
-  async function fillUsername(username: string, page: Page) {
-    await page.getByRole('textbox', { name: 'Username' }).fill(username);
-  }
-
-  async function fillPassword(password: string, page: Page) {
-    await page.getByRole('textbox', { name: 'Password' }).fill(password);
-  }
-
-  async function clickRegister(page: Page) {
-    await page.getByRole('button', { name: 'Register' }).click();
-  }
-
-  async function clickSignIn(page: Page) {
-    await page.getByRole('button', { name: 'Sign in' }).click();
-  }
 
   test.describe('Sign in validation', () => {
     test('signs in successfully with valid credentials', async ({ page }) => {
