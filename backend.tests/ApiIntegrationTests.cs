@@ -12,10 +12,6 @@ using Xunit;
 
 namespace backend.tests;
 
-/// <summary>
-/// Integration tests call the API over HTTP (like a real client) while the server runs in the same process.
-/// That exercises routing, middleware, auth, EF Core, and your controllers together—what employers want to see.
-/// </summary>
 public sealed class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>, IAsyncLifetime
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
