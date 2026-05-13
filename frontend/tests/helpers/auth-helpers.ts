@@ -57,13 +57,30 @@ export async function signInAsUser(page: Page) {
     await clickSignIn(page);
 }
 
-export async function getAccessToken(page: Page): Promise<string> {
-    const token = await page.evaluate(() => {
-    const raw = localStorage.getItem('snippet-manager.auth')
-    return raw ? (JSON.parse(raw) as { accessToken: string }).accessToken : null
+type StoredAuthSnapshot = {
+    userId: number
+    username: string
+    email: string
+    accessToken: string
+}
+
+export async function getStoredAuth(page: Page): Promise<StoredAuthSnapshot> {
+    const auth = await page.evaluate(() => {
+        const raw = localStorage.getItem('snippet-manager.auth')
+        return raw ? (JSON.parse(raw) as {
+            userId: number
+            username: string
+            email: string
+            accessToken: string
+        }) : null
     })
-    if (!token) throw new Error('No access token in localStorage')
-    return token
+    if (!auth) throw new Error('No auth payload in localStorage')
+    return auth
+}
+
+export async function getAccessToken(page: Page): Promise<string> {
+    const { accessToken } = await getStoredAuth(page)
+    return accessToken
 }
   
 export async function apiLogin(
