@@ -6,7 +6,7 @@ import {
 } from './helpers/snippet-helpers'
 import { apiLogin, getAccessToken } from './helpers/auth-helpers'
 
-test.describe('Feed functionality', () => {
+test.describe('Feed', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/')
     })

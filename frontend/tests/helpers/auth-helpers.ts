@@ -97,3 +97,25 @@ export async function apiLogin(
     const body = (await res.json()) as { accessToken: string }
     return body.accessToken
 }
+
+export async function apiRegister(
+    request: APIRequestContext,
+    input: { username: string; email: string; password: string },
+): Promise<{ userId: number }> {
+    const res = await request.post(`${API_URL}/api/auth/register`, {
+        data: {
+            username: input.username,
+            email: input.email,
+            password: input.password,
+        },
+    })
+    if (!res.ok()) {
+        throw new Error(`apiRegister failed: ${res.status()} ${await res.text()}`)
+    }
+    const body = (await res.json()) as { userId?: number; UserId?: number }
+    const userId = body.userId ?? body.UserId
+    if (userId == null || Number.isNaN(userId)) {
+        throw new Error('apiRegister: response missing userId')
+    }
+    return { userId }
+}
