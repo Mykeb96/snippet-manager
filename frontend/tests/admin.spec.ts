@@ -3,7 +3,7 @@ import { apiDeleteUser, apiLogin, apiRegister, getStoredAuth } from './helpers/a
 import { apiCreateTag, apiDeleteTag } from './helpers/tag-helpers'
 import { formatTagDisplayName } from '../src/utils/formatTagDisplayName'
 
-test.describe('Admin', () => {
+test.describe('Admin dashboard', () => {
     test.describe('As admin', () => {
         let adminToken: string;
 
