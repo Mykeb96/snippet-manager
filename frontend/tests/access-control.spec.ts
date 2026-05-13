@@ -5,11 +5,9 @@ import {
     signInAsUser
   } from './helpers/auth-helpers'
 
-const BASE_URL = 'http://localhost:5173'
-
 test.describe('Access control', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto(`${BASE_URL}/auth`)
+        await page.goto('/auth')
     })
 
     test.describe('As admin', () => {
@@ -36,17 +34,18 @@ test.describe('Access control', () => {
         })
 
         test('Admin route redirects back to home', async ({ page }) => {
-            await page.goto(`${BASE_URL}/admin`);
+            await expect(page).toHaveURL(/\/$/);
+            await page.goto('/admin');
 
-            await expect(page.getByRole('list', { name: 'Snippets timeline' })).toBeVisible();
-            await expect(page).toHaveURL('/');
+            await expect(page.getByRole('form', { name: 'Create snippet' })).toBeVisible();
+            await expect(page).toHaveURL(/\/$/);
         })
     })
 
     test.describe('As guest', () => {
         test.describe('Protected routes redirect to sign in and back', () => {
             test('/profile/my-snippets', async ({ page }) => {
-                await page.goto(`${BASE_URL}/profile/my-snippets`);
+                await page.goto('/profile/my-snippets');
 
                 await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 
@@ -56,7 +55,7 @@ test.describe('Access control', () => {
             })
 
             test('/profile/favorites', async ({ page }) => {
-                await page.goto(`${BASE_URL}/profile/favorites`);
+                await page.goto('/profile/favorites');
 
                 await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 
@@ -66,7 +65,7 @@ test.describe('Access control', () => {
             })
 
             test('/profile/settings', async ({ page }) => {
-                await page.goto(`${BASE_URL}/profile/settings`);
+                await page.goto('/profile/settings');
 
                 await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 

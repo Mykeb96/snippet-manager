@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test'
-import { Page } from '@playwright/test'
 
 import { 
   makeUniqueUser, 
@@ -10,11 +9,9 @@ import {
   clickSignIn 
 } from './helpers/auth-helpers'
 
-const BASE_URL = 'http://localhost:5173'
-
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/auth`)
+    await page.goto('/auth')
   })
 
   test.describe('Sign in validation', () => {
