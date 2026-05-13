@@ -1,30 +1,6 @@
 import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 
-const API_URL = 'http://localhost:5090'
-
-export async function getAccessToken(page: Page): Promise<string> {
-  const token = await page.evaluate(() => {
-    const raw = localStorage.getItem('snippet-manager.auth')
-    return raw ? (JSON.parse(raw) as { accessToken: string }).accessToken : null
-  })
-  if (!token) throw new Error('No access token in localStorage')
-  return token
-}
-
-export async function apiLogin(
-  request: APIRequestContext,
-  email: string,
-  password: string,
-): Promise<string> {
-  const res = await request.post(`${API_URL}/api/auth/login`, {
-    data: { email, password },
-  })
-  if (!res.ok()) {
-    throw new Error(`apiLogin failed: ${res.status()} ${await res.text()}`)
-  }
-  const body = (await res.json()) as { accessToken: string }
-  return body.accessToken
-}
+import { API_URL } from './api-config'
 
 export async function apiCreateSnippet(
   request: APIRequestContext,

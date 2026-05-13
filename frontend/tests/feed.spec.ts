@@ -2,10 +2,9 @@ import { test, expect } from '@playwright/test'
 import {
   apiCreateSnippet,
   apiDeleteSnippet,
-  apiLogin,
   createSnippetViaUi,
-  getAccessToken,
 } from './helpers/snippet-helpers'
+import { apiLogin, getAccessToken } from './helpers/auth-helpers'
 
 test.describe('Feed functionality', () => {
     test.beforeEach(async ({ page }) => {
@@ -89,15 +88,35 @@ test.describe('Feed functionality', () => {
             await expect(snippet).toHaveCount(0);
         })
 
-        test('Cannot delete non-owned snippets', async ({ page }) => {
-            const timeline = page.getByRole('list', { name: 'Snippets timeline' })
-            const someoneElsesCard = timeline
-              .getByRole('listitem')
-              .filter({ hasNotText: '@testuser' })
-              .first()
-            
-            await expect(someoneElsesCard).toBeVisible()
-            await expect(someoneElsesCard.getByRole('button', { name: 'Delete snippet' })).toHaveCount(0)            
+        test.describe('Cannot delete non-owned snippets', () => {
+            let orphanSnippetId: number | null = null;
+
+            test.afterEach(async ({ request }) => {
+                if (orphanSnippetId == null) return;
+                const adminToken = await apiLogin(request, 'admin@snippet.local', 'MyAdmin1');
+                await apiDeleteSnippet(request, adminToken, orphanSnippetId);
+                orphanSnippetId = null;
+            })
+
+            test('Delete button is hidden on other users\' snippets', async ({ page, request }) => {
+                const snippetTitle = `Other user snippet ${Date.now()}`;
+                const adminToken = await apiLogin(request, 'admin@snippet.local', 'MyAdmin1');
+                const { id } = await apiCreateSnippet(request, adminToken, {
+                    title: snippetTitle,
+                    code: 'Posted by admin; viewed by regular user',
+                });
+                orphanSnippetId = id;
+
+                await page.reload();
+
+                const snippet = page
+                    .getByRole('list', { name: 'Snippets timeline' })
+                    .getByRole('listitem')
+                    .filter({ hasText: snippetTitle });
+
+                await expect(snippet).toBeVisible();
+                await expect(snippet.getByRole('button', { name: 'Delete snippet' })).toHaveCount(0);
+            })
         })
 
         test.describe('Can interact with favorites', () => {

@@ -6,7 +6,9 @@ import {
   fillPassword, 
   fillUsername, 
   clickRegister, 
-  clickSignIn 
+  clickSignIn,
+  apiDeleteUser,
+  apiLogin
 } from './helpers/auth-helpers'
 
 test.describe('Authentication', () => {
@@ -35,6 +37,15 @@ test.describe('Authentication', () => {
   })
 
   test.describe('Validate fields for registration', () => {
+    let createdUserId: number | null = null;
+
+    test.afterEach(async ({ request }) => {
+      if (createdUserId == null) return;
+      const adminToken = await apiLogin(request, 'admin@snippet.local', 'MyAdmin1');
+      await apiDeleteUser(request, adminToken, createdUserId);
+      createdUserId = null;
+    })
+
     test.beforeEach(async ({ page }) => {
       await page.getByRole('button', { name: 'Create an account' }).click();
     })
@@ -46,7 +57,17 @@ test.describe('Authentication', () => {
       await fillEmail(user.email, page);
       await fillPassword('Password1', page);
 
+      const registerResponsePromise = page.waitForResponse(
+        (res) =>
+          res.request().method() === 'POST' &&
+          res.url().includes('/api/auth/register')
+      );
+      
       await clickRegister(page);
+
+      const registerResponse = await registerResponsePromise;
+      const body = (await registerResponse.json()) as { userId: number };
+      createdUserId = body.userId;
 
       await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
     })
