@@ -245,7 +245,7 @@ var app = builder.Build();
 // needs a writable path (e.g. ConnectionStrings__DefaultConnection=Data Source=/home/site/data/app.db).
 EnsureSqliteParentDirectoryExists(connectionString);
 
-// Production (e.g. Azure) does not run SeedDevelopmentDataAsync, but the database still needs schema.
+// Schema, baseline tags, and demo admin (roles + seeded account) for all environments — including production demos.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -255,11 +255,11 @@ using (var scope = app.Services.CreateScope())
     startupLogger.LogInformation("EF Core migrations finished.");
     await SeedTagsAsync(db);
     startupLogger.LogInformation("Baseline tags ensured.");
-}
 
-if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
-{
-    await SeedDevelopmentDataAsync(app);
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    await SeedAdminRolesAndDemoUserAsync(userManager, roleManager, configuration, startupLogger);
 }
 
 if (app.Environment.IsDevelopment())
@@ -282,12 +282,17 @@ app.MapControllers();
 
 app.Run();
 
-static async Task SeedDevelopmentDataAsync(WebApplication app)
+/// <summary>
+/// Ensures Admin/Owner roles and a demo admin user (portfolio / employer walkthrough). Idempotent.
+/// Configure via <c>AdminSeed:Email</c>, <c>AdminSeed:Username</c>, <c>AdminSeed:Password</c>
+/// (Azure application settings: <c>AdminSeed__Email</c>, etc.). Omitted values default to the same demo account as local dev.
+/// </summary>
+static async Task SeedAdminRolesAndDemoUserAsync(
+    UserManager<User> userManager,
+    RoleManager<IdentityRole<int>> roleManager,
+    IConfiguration configuration,
+    ILogger logger)
 {
-    using var scope = app.Services.CreateScope();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<int>>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-
     const string adminRole = "Admin";
     const string ownerRole = "Owner";
     if (!await roleManager.RoleExistsAsync(adminRole))
@@ -300,39 +305,45 @@ static async Task SeedDevelopmentDataAsync(WebApplication app)
         await roleManager.CreateAsync(new IdentityRole<int>(ownerRole));
     }
 
-    var adminEmail = "admin@snippet.local";
-    var adminUsername = "admin";
-    var adminPassword = "MyAdmin1";
+    var adminEmail = configuration["AdminSeed:Email"]?.Trim();
+    if (string.IsNullOrEmpty(adminEmail))
+    {
+        adminEmail = "admin@snippet.local";
+    }
+
+    var adminUsername = configuration["AdminSeed:Username"]?.Trim();
+    if (string.IsNullOrEmpty(adminUsername))
+    {
+        adminUsername = "admin";
+    }
+
+    var adminPassword = configuration["AdminSeed:Password"]?.Trim();
+    if (string.IsNullOrEmpty(adminPassword))
+    {
+        adminPassword = "MyAdmin1";
+    }
 
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser is null)
     {
-        if (string.IsNullOrWhiteSpace(adminPassword))
-        {
-            Console.WriteLine("WARNING: AdminSeed:Password is not configured. Skipping development admin user creation.");
-            return;
-        }
-
         adminUser = new User
         {
             UserName = adminUsername,
             Email = adminEmail,
-            EmailConfirmed = true
+            EmailConfirmed = true,
         };
 
         var createResult = await userManager.CreateAsync(adminUser, adminPassword);
         if (!createResult.Succeeded)
         {
             var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to seed development admin user: {errors}");
+            throw new InvalidOperationException($"Failed to seed admin user: {errors}");
         }
+
+        logger.LogInformation("Seeded demo admin user {Email}.", adminEmail);
     }
-    else if (!string.IsNullOrWhiteSpace(adminPassword))
+    else
     {
-        // User already exists: CreateAsync was skipped, so appsettings password was never applied.
-        // RemovePasswordAsync + AddPasswordAsync can fail on some stores or leave the account with
-        // no password if remove succeeds but add does not. Hash + UpdateAsync always persists a
-        // password the PasswordHasher can verify (same path CheckPasswordAsync uses).
         foreach (var validator in userManager.PasswordValidators)
         {
             var vr = await validator.ValidateAsync(userManager, adminUser, adminPassword);
@@ -357,6 +368,8 @@ static async Task SeedDevelopmentDataAsync(WebApplication app)
             throw new InvalidOperationException(
                 $"AdminSeed: could not refresh security stamp: {string.Join("; ", stampResult.Errors.Select(e => e.Description))}");
         }
+
+        logger.LogInformation("Refreshed demo admin password for {Email}.", adminEmail);
     }
 
     if (!await userManager.IsInRoleAsync(adminUser, adminRole))
