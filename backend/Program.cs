@@ -145,6 +145,27 @@ if (!builder.Environment.IsEnvironment("Testing"))
     });
 }
 
+static void EnsureSqliteParentDirectoryExists(string connectionString)
+{
+    const string prefix = "Data Source=";
+    if (!connectionString.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+    {
+        return;
+    }
+
+    var path = connectionString[prefix.Length..].Trim();
+    if (string.IsNullOrWhiteSpace(path) || !Path.IsPathRooted(path))
+    {
+        return;
+    }
+
+    var directory = Path.GetDirectoryName(path);
+    if (!string.IsNullOrEmpty(directory))
+    {
+        Directory.CreateDirectory(directory);
+    }
+}
+
 static string GetClientKey(HttpContext context)
 {
     var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -211,6 +232,20 @@ static string[] BuildCorsAllowedOrigins(IConfiguration configuration, IWebHostEn
 
 var app = builder.Build();
 
+// Some App Service configurations (e.g. Run From Package) mount the app directory read-only. SQLite
+// needs a writable path (e.g. ConnectionStrings__DefaultConnection=Data Source=/home/site/data/app.db).
+EnsureSqliteParentDirectoryExists(connectionString);
+
+// Production (e.g. Azure) does not run SeedDevelopmentDataAsync, but the database still needs schema.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    startupLogger.LogInformation("Applying EF Core migrations…");
+    await db.Database.MigrateAsync();
+    startupLogger.LogInformation("EF Core migrations finished.");
+}
+
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
     await SeedDevelopmentDataAsync(app);
@@ -240,7 +275,6 @@ static async Task SeedDevelopmentDataAsync(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
 
     await SeedTagsAsync(db);
 
