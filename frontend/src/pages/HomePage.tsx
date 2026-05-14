@@ -116,6 +116,7 @@ export default function HomePage() {
         if (cancelled) return
         const message = e instanceof Error ? e.message : 'Something went wrong.'
         setLoadError(message)
+        setHasMore(false)
       } finally {
         if (!cancelled) {
           loadingLockRef.current = false
@@ -131,7 +132,7 @@ export default function HomePage() {
   }, [])
 
   const loadMore = useCallback(async () => {
-    if (loadingLockRef.current || loadingMore || !hasMore) return
+    if (loadingLockRef.current || !hasMore) return
 
     loadingLockRef.current = true
     setLoadingMore(true)
@@ -145,11 +146,12 @@ export default function HomePage() {
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Something went wrong.'
       setLoadError(message)
+      setHasMore(false)
     } finally {
       loadingLockRef.current = false
       setLoadingMore(false)
     }
-  }, [hasMore, nextPage, loadingMore])
+  }, [hasMore, nextPage])
 
   useEffect(() => {
     const el = sentinelRef.current
@@ -173,6 +175,7 @@ export default function HomePage() {
     loadingLockRef.current = true
     setInitialLoading(true)
     setLoadError(null)
+    setHasMore(true)
     try {
       const result = await fetchSnippetsPage(1, PAGE_SIZE)
       setSnippets(result.items)
@@ -181,6 +184,7 @@ export default function HomePage() {
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Something went wrong.'
       setLoadError(message)
+      setHasMore(false)
     } finally {
       loadingLockRef.current = false
       setInitialLoading(false)
@@ -462,7 +466,10 @@ export default function HomePage() {
             onClick={() => {
               setLoadError(null)
               if (snippets.length === 0) void retryInitial()
-              else void loadMore()
+              else {
+                setHasMore(true)
+                void loadMore()
+              }
             }}
           >
             Retry
