@@ -21,6 +21,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # webapps-deploy only uses the publish profile. If this step fails, the
+      # deploy action falls through to "Azure login" and shows a misleading error.
+      - name: Validate Azure secrets
+        env:
+          AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        run: |
+          if [ -z "$AZURE_WEBAPP_NAME" ]; then
+            echo "::error::Secret AZURE_WEBAPP_NAME is empty. Add it under Repo Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          if [ -z "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
+            echo "::error::Secret AZURE_WEBAPP_PUBLISH_PROFILE is empty. Paste the entire .PublishSettings XML (after enabling SCM basic auth in App Service → Configuration → General settings)."
+            exit 1
+          fi
+          case "$AZURE_WEBAPP_PUBLISH_PROFILE" in *publishData*)
+            ;;
+          *)
+            echo "::error::AZURE_WEBAPP_PUBLISH_PROFILE does not look like publish profile XML (expected publishData). Re-download from Azure → Overview → Download publish profile."
+            exit 1
+            ;;
+          esac
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
