@@ -2,7 +2,7 @@
 
 A full-stack web app for sharing and managing code snippets. **ASP.NET Core 10 + EF Core** API, **React 19 + TypeScript** SPA, **JWT authentication with role-based authorization**, and a comprehensive **Playwright end-to-end** test suite alongside **xUnit API integration tests**.
 
-> **Live demo:** _coming soon_ &nbsp;·&nbsp; **API docs (local):** http://localhost:5090/swagger
+> **Live demo:** [my-snippet-manager.vercel.app](https://my-snippet-manager.vercel.app/) &nbsp;·&nbsp; **API docs (local):** http://localhost:5090/swagger
 
 ---
 
@@ -249,12 +249,3 @@ snippet-manager/
 └── frontend/          # Vite + React + TypeScript SPA
     └── tests/         # Playwright e2e suite
 ```
-
----
-
-## What I'd add next
-
-- Deploy: API on Azure App Service, frontend on Vercel, GitHub Actions running both test suites on every push.
-- OAuth providers (GitHub, Google) alongside the existing email/password flow.
-- Syntax highlighting on snippet cards.
-- Observability — structured logs + a small request-trace correlation id end-to-end.
