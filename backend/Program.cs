@@ -108,7 +108,15 @@ if (!builder.Environment.IsEnvironment("Testing"))
         };
 
         options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-            RateLimitPartition.GetFixedWindowLimiter(
+        {
+            // CORS preflight uses OPTIONS; counting it toward the global limit breaks the browser
+            // (failed preflight is surfaced as a CORS error, not 429).
+            if (HttpMethods.IsOptions(httpContext.Request.Method))
+            {
+                return RateLimitPartition.GetNoLimiter(string.Empty);
+            }
+
+            return RateLimitPartition.GetFixedWindowLimiter(
                 partitionKey: GetClientKey(httpContext),
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
@@ -116,8 +124,9 @@ if (!builder.Environment.IsEnvironment("Testing"))
                     Window = TimeSpan.FromMinutes(1),
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                     QueueLimit = 0,
-                    AutoReplenishment = true
-                }));
+                    AutoReplenishment = true,
+                });
+        });
 
         options.AddPolicy("WritePolicy", httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
