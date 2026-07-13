@@ -457,6 +457,13 @@ export default function HomePage() {
         </div>
       )}
 
+      <div className="feed-hosting-notice" role="note">
+        <p>
+          This demo is hosted on a free Azure App Service plan. The API may take a
+          moment to wake up on first load—thanks for your patience.
+        </p>
+      </div>
+
       {loadError && !initialLoading && (
         <div className="feed-banner feed-banner--error" role="alert">
           <p>{loadError}</p>

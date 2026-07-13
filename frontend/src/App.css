@@ -1484,6 +1484,19 @@ a.avatar-btn {
   border-radius: var(--radius-sm);
 }
 
+.feed-hosting-notice {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(250, 204, 21, 0.06);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.feed-hosting-notice p {
+  margin: 0;
+}
+
 .feed-list {
   margin: 0;
   padding: 0;
